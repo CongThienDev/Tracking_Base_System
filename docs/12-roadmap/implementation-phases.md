@@ -87,7 +87,7 @@ Allowed status values:
 
 ## Phase 5: Frontend and Server Client Contract
 
-- Status: `not_started`
+- Status: `done`
 - Objective: make integration from other repos reliable.
 - Deliverables:
 - lightweight tracking SDK or snippet contract

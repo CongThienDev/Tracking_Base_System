@@ -26,6 +26,28 @@ This file tracks day-by-day execution progress for roadmap phases.
 
 ## Log
 
+## 2026-04-13 (update 10)
+
+- Owner: Worker 3
+- Phase: Phase 5 - Frontend and Server Client Contract
+- Status: in_progress
+- Completed today:
+- Wired root scripts for `@tracking-base/shared-contracts` build/test without changing the existing API/router-worker scripts
+- Updated frontend contract docs to specify auto `page_view`, 30-minute session inactivity rotation, and `event_id` reuse for browser pixel callbacks
+- Aligned Phase 5 roadmap language with the current branch evidence level
+- Evidence:
+- `package.json`
+- `docs/06-frontend/tracking-sdk.md`
+- `docs/06-frontend/browser-snippet.md`
+- `docs/12-roadmap/implementation-phases.md`
+- Test commands:
+- `npm run build:shared-contracts` (script wired; workspace `@tracking-base/shared-contracts` is not present in this branch)
+- `npm run test:shared-contracts` (script wired; workspace `@tracking-base/shared-contracts` is not present in this branch)
+- Blockers:
+- branch does not yet contain shared-contracts implementation or passing tests
+- Next step (next working day):
+- add or sync the `@tracking-base/shared-contracts` workspace implementation, then run the new build/test scripts and revisit the Phase 5 gate
+
 ## 2026-04-13
 
 - Owner: team
@@ -227,3 +249,28 @@ This file tracks day-by-day execution progress for roadmap phases.
 - none
 - Next step (next working day):
 - move to Phase 5 frontend/server client contract after validating environment config for Meta/Google/TikTok endpoints
+
+## 2026-04-13 (update 11)
+
+- Owner: team
+- Phase: Phase 5 - Frontend and Server Client Contract
+- Status: done
+- Completed today:
+- Implemented `@tracking-base/shared-contracts` lightweight tracking client with auto `page_view`, stable `anonymous_id`, `session_id` lifecycle (30-minute inactivity rotation), and per-event `event_id` generation
+- Added browser snippet reference installer exposing global `track()` contract
+- Ensured same `event_id` propagation to optional browser pixel callback path
+- Added tests covering session persistence/rotation, auto `page_view`, `event_id` generation and propagation, and fail-silent transport behavior
+- Wired root scripts for shared-contracts build/test
+- Evidence:
+- `packages/shared-contracts/src/tracking-client.ts`
+- `packages/shared-contracts/src/browser-snippet-reference.ts`
+- `packages/shared-contracts/src/index.ts`
+- `packages/shared-contracts/test/tracking-client.test.ts`
+- `packages/shared-contracts/package.json`
+- `package.json`
+- `npm run -w @tracking-base/shared-contracts build` -> pass
+- `npm run -w @tracking-base/shared-contracts test` -> pass
+- Blockers:
+- none
+- Next step (next working day):
+- start Phase 6 ops/security hardening baseline (observability + auth/rate-limit policy)

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tracking Base System - Phase Dashboard</title>
+    <link rel="stylesheet" href="./phases-dashboard.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Tracking Base System</p>
+          <h1>Roadmap Phases Dashboard</h1>
+          <p class="subtitle">
+            Quick view to understand what is done, what is pending, and how data flows through the system.
+          </p>
+        </div>
+        <div class="summary">
+          <div class="ring-wrap">
+            <div class="ring" id="progressRing">
+              <span id="progressText">0%</span>
+            </div>
+          </div>
+          <ul class="kpis">
+            <li><strong id="doneCount">0</strong><span>Done</span></li>
+            <li><strong id="activeCount">0</strong><span>In Progress</span></li>
+            <li><strong id="pendingCount">0</strong><span>Not Started</span></li>
+          </ul>
+        </div>
+      </header>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Phase Timeline</h2>
+          <div class="filters">
+            <button class="chip is-active" data-filter="all">All</button>
+            <button class="chip" data-filter="done">Done</button>
+            <button class="chip" data-filter="in_progress">In Progress</button>
+            <button class="chip" data-filter="not_started">Not Started</button>
+          </div>
+        </div>
+        <div id="phaseGrid" class="phase-grid"></div>
+      </section>
+
+      <section class="two-col">
+        <article class="panel">
+          <h2>System Flow</h2>
+          <p class="small">One event lifecycle from external client to destinations.</p>
+          <div class="flow">
+            <div class="node">Client App<br /><span>Browser / Backend</span></div>
+            <div class="arrow">→</div>
+            <div class="node">Tracking API<br /><span>POST /track</span></div>
+            <div class="arrow">→</div>
+            <div class="node">Postgres<br /><span>Canonical events</span></div>
+            <div class="arrow">→</div>
+            <div class="node">BullMQ + Redis<br /><span>Fan-out jobs</span></div>
+            <div class="arrow">→</div>
+            <div class="node">Router Worker<br /><span>Map + retry + state</span></div>
+            <div class="arrow">→</div>
+            <div class="node">Destinations<br /><span>Meta / Google / TikTok</span></div>
+          </div>
+        </article>
+
+        <article class="panel detail-panel">
+          <h2 id="detailTitle">Select a phase</h2>
+          <p id="detailObjective" class="detail-objective"></p>
+          <div class="detail-columns">
+            <div>
+              <h3>Deliverables</h3>
+              <ul id="detailDeliverables"></ul>
+            </div>
+            <div>
+              <h3>Exit Criteria</h3>
+              <ul id="detailExitCriteria"></ul>
+            </div>
+          </div>
+          <div>
+            <h3>How it helps the flow</h3>
+            <p id="detailFlowImpact"></p>
+          </div>
+        </article>
+      </section>
+
+      <footer class="footer-note">
+        <p>
+          Tip: open this file in browser and click each phase card to view implementation intent and effect on runtime flow.
+        </p>
+      </footer>
+    </main>
+
+    <script src="./phases-dashboard.js"></script>
+  </body>
+</html>
