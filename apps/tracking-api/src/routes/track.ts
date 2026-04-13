@@ -1,9 +1,15 @@
 import type { FastifyPluginAsync } from 'fastify';
+import { dispatchDeliveryJob } from '../services/dispatch-delivery-job.js';
 import { normalizeTrackEvent, ValidationError } from '../services/normalize-track-event.js';
+import type { DeliveryJobDispatcher } from '../services/delivery-job-dispatcher.js';
 import type { EventRepository } from '../types/track.js';
 
 type TrackRouteOptions = {
   eventRepository: EventRepository;
+  deliveryJobDispatcher: DeliveryJobDispatcher;
+  logger: {
+    error: (object: unknown, message?: string) => void;
+  };
 };
 
 export function trackRoute(options: TrackRouteOptions): FastifyPluginAsync {
@@ -27,6 +33,14 @@ export function trackRoute(options: TrackRouteOptions): FastifyPluginAsync {
 
         const result = await options.eventRepository.insertIfNotExists(normalized);
 
+        if (result.inserted) {
+          dispatchDeliveryJob({
+            dispatcher: options.deliveryJobDispatcher,
+            event: normalized,
+            logger: options.logger
+          });
+        }
+
         return reply.code(200).send({
           status: 'ok',
           event_id: normalized.eventId,
@@ -41,7 +55,7 @@ export function trackRoute(options: TrackRouteOptions): FastifyPluginAsync {
           });
         }
 
-        request.log.error({ err: error }, 'track endpoint failed');
+        options.logger.error({ err: error }, 'track endpoint failed');
         return reply.code(500).send({
           status: 'error',
           code: 'internal_error',

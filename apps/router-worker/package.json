@@ -1,24 +1,21 @@
 {
-  "name": "@tracking-base/tracking-api",
+  "name": "@tracking-base/router-worker",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "dist/server.js",
-  "types": "dist/server.d.ts",
+  "main": "dist/worker.js",
+  "types": "dist/worker.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "tsx watch src/server.ts",
-    "start": "node dist/server.js",
-    "test": "vitest run",
-    "migrate": "tsx scripts/migrate.ts"
+    "dev": "tsx watch src/worker.ts",
+    "start": "node dist/worker.js",
+    "test": "vitest run"
   },
   "dependencies": {
     "bullmq": "^5.58.2",
     "dotenv": "^16.6.1",
-    "fastify": "^5.6.1",
     "ioredis": "^5.8.1",
-    "pg": "^8.16.3",
-    "zod": "^4.1.12"
+    "pg": "^8.16.3"
   },
   "devDependencies": {
     "@types/node": "^24.7.2",

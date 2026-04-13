@@ -1,23 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../src/app.js';
-import type { EventRepository, InsertEventResult, NormalizedTrackEvent } from '../src/types/track.js';
-
-class InMemoryEventRepository implements EventRepository {
-  private readonly events = new Map<string, NormalizedTrackEvent>();
-
-  async insertIfNotExists(event: NormalizedTrackEvent): Promise<InsertEventResult> {
-    if (this.events.has(event.eventId)) {
-      return { inserted: false };
-    }
-
-    this.events.set(event.eventId, event);
-    return { inserted: true };
-  }
-
-  count(): number {
-    return this.events.size;
-  }
-}
+import {
+  createLoggerSpy,
+  InMemoryEventRepository,
+  RecordingDeliveryJobDispatcher
+} from './support/fakes.js';
 
 describe('POST /track', () => {
   let repository: InMemoryEventRepository;
@@ -27,7 +14,13 @@ describe('POST /track', () => {
   });
 
   it('stores a valid event and returns event_id', async () => {
-    const app = buildApp({ eventRepository: repository });
+    const deliveryJobDispatcher = new RecordingDeliveryJobDispatcher();
+    const logger = createLoggerSpy();
+    const app = buildApp({
+      eventRepository: repository,
+      deliveryJobDispatcher,
+      logger
+    });
 
     const response = await app.inject({
       method: 'POST',
@@ -56,12 +49,24 @@ describe('POST /track', () => {
       deduplicated: false
     });
     expect(repository.count()).toBe(1);
+    expect(deliveryJobDispatcher.count()).toBe(1);
+    expect(deliveryJobDispatcher.lastEvent()).toMatchObject({
+      eventId: 'evt-001',
+      eventName: 'purchase'
+    });
+    expect(logger.error).not.toHaveBeenCalled();
 
     await app.close();
   });
 
   it('deduplicates duplicate event_id requests', async () => {
-    const app = buildApp({ eventRepository: repository });
+    const deliveryJobDispatcher = new RecordingDeliveryJobDispatcher();
+    const logger = createLoggerSpy();
+    const app = buildApp({
+      eventRepository: repository,
+      deliveryJobDispatcher,
+      logger
+    });
 
     const payload = {
       event_id: 'evt-dup-001',
@@ -96,12 +101,23 @@ describe('POST /track', () => {
     });
 
     expect(repository.count()).toBe(1);
+    expect(deliveryJobDispatcher.count()).toBe(1);
+    expect(deliveryJobDispatcher.lastEvent()).toMatchObject({
+      eventId: 'evt-dup-001'
+    });
+    expect(logger.error).not.toHaveBeenCalled();
 
     await app.close();
   });
 
   it('returns validation error for missing session_id', async () => {
-    const app = buildApp({ eventRepository: repository });
+    const deliveryJobDispatcher = new RecordingDeliveryJobDispatcher();
+    const logger = createLoggerSpy();
+    const app = buildApp({
+      eventRepository: repository,
+      deliveryJobDispatcher,
+      logger
+    });
 
     const response = await app.inject({
       method: 'POST',
@@ -118,6 +134,54 @@ describe('POST /track', () => {
       status: 'error',
       code: 'validation_error'
     });
+    expect(deliveryJobDispatcher.count()).toBe(0);
+    expect(logger.error).not.toHaveBeenCalled();
+
+    await app.close();
+  });
+
+  it('does not fail ingestion when enqueue fails', async () => {
+    const deliveryJobDispatcher = new RecordingDeliveryJobDispatcher({ fail: true });
+    const logger = createLoggerSpy();
+    const app = buildApp({
+      eventRepository: repository,
+      deliveryJobDispatcher,
+      logger
+    });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/track',
+      headers: {
+        'content-type': 'application/json'
+      },
+      payload: {
+        event_id: 'evt-queue-fail-001',
+        event_name: 'purchase',
+        session: {
+          session_id: 'sess-queue-fail-001'
+        }
+      }
+    });
+
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      status: 'ok',
+      event_id: 'evt-queue-fail-001',
+      deduplicated: false
+    });
+    expect(repository.count()).toBe(1);
+    expect(deliveryJobDispatcher.count()).toBe(1);
+    expect(logger.error).toHaveBeenCalledTimes(1);
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        err: expect.any(Error),
+        eventId: 'evt-queue-fail-001'
+      }),
+      'failed to enqueue delivery job'
+    );
 
     await app.close();
   });

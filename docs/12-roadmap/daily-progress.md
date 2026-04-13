@@ -89,3 +89,71 @@ This file tracks day-by-day execution progress for roadmap phases.
 - none
 - Next step (next working day):
 - Start Phase 2 async routing skeleton with BullMQ + Redis baseline
+
+## 2026-04-13 (update 4)
+
+- Owner: team
+- Phase: Phase 2 - Async Routing Skeleton
+- Status: in_progress
+- Completed today:
+- Added Phase 2 routing-state migration for `event_deliveries`
+- Added delivery and event indexes aligned with canonical schema docs
+- Kept migration idempotent for safe reruns
+- Evidence:
+- `infra/sql/002_phase2_event_deliveries.sql`
+- Blockers:
+- none
+- Next step (next working day):
+- implement router worker queue wiring and event delivery upsert flow
+
+## 2026-04-13 (update 5)
+
+- Owner: team
+- Phase: Phase 2 - Async Routing Skeleton
+- Status: in_progress
+- Completed today:
+- Added `apps/router-worker` BullMQ + Redis worker skeleton with retry-aware processor tests
+- Added tracking-api delivery dispatcher abstraction and async enqueue handoff after successful insert
+- Added failure-tolerant enqueue behavior so ingestion still returns success when queue dispatch fails
+- Added root scripts for router worker build and test
+- Applied Phase 2 migration to Railway DB and verified migration rerun safety
+- Evidence:
+- `apps/router-worker/src/runtime/router-worker-runtime.ts`
+- `apps/router-worker/src/processor/process-delivery-job.ts`
+- `apps/tracking-api/src/services/delivery-job-dispatcher.ts`
+- `apps/tracking-api/src/services/dispatch-delivery-job.ts`
+- `apps/tracking-api/test/track-route.test.ts`
+- `infra/sql/002_phase2_event_deliveries.sql`
+- `npm run build` -> pass
+- `npm test` with Railway `TEST_DATABASE_URL` -> pass
+- `npm run build:router-worker` and `npm run test:router-worker` -> pass
+- `npm run migrate` with Railway `DATABASE_URL` -> pass
+- Blockers:
+- `event_deliveries` status update flow from worker runtime into Postgres is not implemented yet
+- Next step (next working day):
+- implement Postgres-backed delivery state writer in router worker and close Phase 2 gate
+
+## 2026-04-13 (update 6)
+
+- Owner: team
+- Phase: Phase 2 - Async Routing Skeleton
+- Status: done
+- Completed today:
+- Implemented Postgres-backed delivery state writer in router worker
+- Worker now writes `delivered`, `retrying`, and `failed` states into `event_deliveries`
+- Added unit tests for delivery state writer
+- Re-verified build and tests for both apps
+- Re-ran migrations and DB-backed tracking-api test suite on Railway
+- Evidence:
+- `apps/router-worker/src/state/delivery-state-writer.ts`
+- `apps/router-worker/src/runtime/router-worker-runtime.ts`
+- `apps/router-worker/test/delivery-state-writer.test.ts`
+- `npm run build` -> pass
+- `npm run build:router-worker` -> pass
+- `npm run test:router-worker` -> pass
+- `npm run migrate` (Railway DB) -> pass
+- `npm test` with Railway `TEST_DATABASE_URL` -> pass
+- Blockers:
+- none
+- Next step (next working day):
+- start Phase 3 Meta integration (mapper + API client + contract tests)

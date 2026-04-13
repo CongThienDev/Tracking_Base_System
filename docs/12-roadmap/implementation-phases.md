@@ -53,7 +53,7 @@ Allowed status values:
 
 ## Phase 2: Async Routing Skeleton
 
-- Status: `not_started`
+- Status: `done`
 - Objective: route outside the ingestion hot path.
 - Deliverables:
 - queue and worker skeleton using `BullMQ + Redis`

@@ -11,6 +11,10 @@
     "dev": "npm run -w @tracking-base/tracking-api dev",
     "start": "npm run -w @tracking-base/tracking-api start",
     "test": "npm run -w @tracking-base/tracking-api test",
-    "migrate": "npm run -w @tracking-base/tracking-api migrate"
+    "migrate": "npm run -w @tracking-base/tracking-api migrate",
+    "build:router-worker": "npm run -w @tracking-base/router-worker build",
+    "dev:router-worker": "npm run -w @tracking-base/router-worker dev",
+    "start:router-worker": "npm run -w @tracking-base/router-worker start",
+    "test:router-worker": "npm run -w @tracking-base/router-worker test"
   }
 }

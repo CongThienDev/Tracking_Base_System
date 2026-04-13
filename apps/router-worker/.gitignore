@@ -1,0 +1,4 @@
+dist/
+test/**/*.js
+.env
+.env.local
