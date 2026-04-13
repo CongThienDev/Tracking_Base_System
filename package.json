@@ -1,0 +1,16 @@
+{
+  "name": "tracking-base-system",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run -w @tracking-base/tracking-api build",
+    "dev": "npm run -w @tracking-base/tracking-api dev",
+    "start": "npm run -w @tracking-base/tracking-api start",
+    "test": "npm run -w @tracking-base/tracking-api test",
+    "migrate": "npm run -w @tracking-base/tracking-api migrate"
+  }
+}

@@ -21,9 +21,16 @@ Allowed status values:
 - `review`
 - `done`
 
+## Locked technical decisions
+
+- Queue technology for MVP: `BullMQ + Redis`
+- Decision scope: Phase 2 implementation baseline
+- Re-evaluation trigger: sustained complexity that requires broker-native routing topology or multi-language consumer patterns
+- Decision record: [ADR-0004: Queue technology choice](../10-adrs/adr-0004-queue-technology-choice.md)
+
 ## Phase 0: Foundation Freeze
 
-- Status: `not_started`
+- Status: `done`
 - Objective: lock docs baseline and execution rules.
 - Deliverables:
 - confirm core invariants (`event_id`, store-before-send, dedup, privacy)
@@ -34,7 +41,7 @@ Allowed status values:
 
 ## Phase 1: Ingestion Core
 
-- Status: `not_started`
+- Status: `done`
 - Objective: receive and persist canonical events.
 - Deliverables:
 - `POST /track`
@@ -49,7 +56,7 @@ Allowed status values:
 - Status: `not_started`
 - Objective: route outside the ingestion hot path.
 - Deliverables:
-- queue and worker skeleton
+- queue and worker skeleton using `BullMQ + Redis`
 - `event_deliveries` state handling
 - retry policy with at least 3 attempts
 - mock destination adapter
