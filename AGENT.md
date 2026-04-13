@@ -113,6 +113,7 @@ Primary goals:
 - Confirm duplicate requests are handled safely
 - Confirm downstream failures do not block persistence
 - Update docs if behavior changed
+- Update roadmap progress for the current working day in `docs/12-roadmap/daily-progress.md`
 
 ## Implementation expectations
 
@@ -170,3 +171,9 @@ Choose the option that best preserves:
 - idempotency
 - data privacy
 - explicit contracts and testability
+
+## Progress tracking rule
+
+- Phase tracking source: `docs/12-roadmap/implementation-phases.md`
+- Daily tracking source: `docs/12-roadmap/daily-progress.md`
+- Requirement: every working day with project activity must append one daily log entry

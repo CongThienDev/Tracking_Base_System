@@ -1,5 +1,10 @@
 # Backlog
 
+Roadmap control files:
+
+- [Implementation phases](implementation-phases.md)
+- [Daily progress log](daily-progress.md)
+
 ## Near-term
 
 - implementation skeleton in TypeScript

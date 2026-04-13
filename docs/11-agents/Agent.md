@@ -26,6 +26,7 @@ Implement this repository without violating source-of-truth, `event_id`, privacy
 - tests covering critical invariants
 - doc updates when contracts change
 - explicit statement of assumptions if anything remains ambiguous
+- daily progress update in `docs/12-roadmap/daily-progress.md` when work was done
 
 ## Definition of success
 
@@ -36,3 +37,5 @@ The implementation keeps ingestion fast, storage authoritative, routing async, a
 - [Root AGENT guide](../../AGENT.md)
 - [Tracking API agent](tracking-api-agent.md)
 - [Schema agent](schema-agent.md)
+- [Implementation phases](../12-roadmap/implementation-phases.md)
+- [Daily progress log](../12-roadmap/daily-progress.md)

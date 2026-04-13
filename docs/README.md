@@ -47,4 +47,4 @@ The layout is designed so humans and coding agents can navigate the repository w
 - [`09-testing/`](09-testing/test-strategy.md): quality gates
 - [`10-adrs/`](10-adrs/README.md): architecture decisions
 - [`11-agents/`](11-agents/README.md): agent operating docs
-- [`12-roadmap/`](12-roadmap/backlog.md): non-MVP evolution
+- [`12-roadmap/`](12-roadmap/backlog.md): delivery phases, daily tracking, non-MVP evolution
