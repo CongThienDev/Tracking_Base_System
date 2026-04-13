@@ -76,7 +76,7 @@ Allowed status values:
 
 ## Phase 4: TikTok and Google Integrations
 
-- Status: `not_started`
+- Status: `done`
 - Objective: complete MVP downstream coverage.
 - Deliverables:
 - TikTok adapter

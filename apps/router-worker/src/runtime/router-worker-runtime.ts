@@ -1,12 +1,16 @@
 import { Worker } from 'bullmq';
 import { createConsoleWorkerLogger, type WorkerLogger } from '../logging/worker-logger.js';
-import { createNoopDestinationAdapterRegistry } from '../adapters/noop-destination-adapter.js';
+import type { DestinationAdapterRegistry } from '../adapters/destination-adapter.js';
+import { GoogleConversionAdapter } from '../adapters/google-conversion-adapter.js';
+import { NoopDestinationAdapter } from '../adapters/noop-destination-adapter.js';
+import { TikTokEventsAdapter } from '../adapters/tiktok-events-adapter.js';
 import type { DeliveryJobData } from '../types.js';
-import { isRetryableDeliveryError } from '../processor/delivery-errors.js';
+import { TerminalDeliveryError, isRetryableDeliveryError } from '../processor/delivery-errors.js';
 import { processDeliveryJob } from '../processor/process-delivery-job.js';
 import type { RouterWorkerConfig } from '../config.js';
 import { createRedisConnection } from '../queue/redis-connection.js';
 import { closeDbPool, getDbPool } from '../db/client.js';
+import { PostgresEventRepository, type EventRepository } from '../db/event-repository.js';
 import {
   NoopDeliveryStateWriter,
   PostgresDeliveryStateWriter,
@@ -19,21 +23,57 @@ export type RouterWorkerRuntime = {
   close(): Promise<void>;
 };
 
-function buildNoopAdapterRegistry(): ReturnType<typeof createNoopDestinationAdapterRegistry> {
-  return createNoopDestinationAdapterRegistry(['meta', 'google', 'tiktok']);
+function buildAdapterRegistry(config: RouterWorkerConfig, logger: WorkerLogger): DestinationAdapterRegistry {
+  const metaAdapter = new NoopDestinationAdapter('meta');
+
+  const googleAdapter = config.google.endpointUrl
+    ? new GoogleConversionAdapter(config.google.endpointUrl, config.google.apiKey)
+    : new NoopDestinationAdapter('google');
+
+  if (!config.google.endpointUrl) {
+    logger.warn({ destination: 'google' }, 'google endpoint missing; using noop adapter');
+  }
+
+  const tiktokAdapter = config.tiktok.endpointUrl
+    ? new TikTokEventsAdapter({
+        endpointUrl: config.tiktok.endpointUrl,
+        accessToken: config.tiktok.accessToken
+      })
+    : new NoopDestinationAdapter('tiktok');
+
+  if (!config.tiktok.endpointUrl) {
+    logger.warn({ destination: 'tiktok' }, 'tiktok endpoint missing; using noop adapter');
+  }
+
+  return Object.freeze({
+    meta: metaAdapter,
+    google: googleAdapter,
+    tiktok: tiktokAdapter
+  });
 }
 
 export function createRouterWorker(config: RouterWorkerConfig): RouterWorkerRuntime {
   const logger = createConsoleWorkerLogger(config.workerName);
   const connection = createRedisConnection(config.redis);
-  const adapters = buildNoopAdapterRegistry();
+  const adapters = buildAdapterRegistry(config, logger);
+  const dbPool = config.databaseUrl ? getDbPool(config.databaseUrl) : null;
 
-  const deliveryStateWriter: DeliveryStateWriter = config.databaseUrl
-    ? new PostgresDeliveryStateWriter(getDbPool(config.databaseUrl))
+  const deliveryStateWriter: DeliveryStateWriter = dbPool
+    ? new PostgresDeliveryStateWriter(dbPool)
     : new NoopDeliveryStateWriter();
+  const eventRepository: EventRepository = dbPool
+    ? new PostgresEventRepository(dbPool)
+    : {
+        async getByEventId(): Promise<null> {
+          return null;
+        }
+      };
 
   if (!config.databaseUrl) {
-    logger.warn({ workerName: config.workerName }, 'DATABASE_URL missing; delivery state updates are disabled');
+    logger.warn(
+      { workerName: config.workerName },
+      'DATABASE_URL missing; canonical event fetch and delivery state updates are disabled'
+    );
   }
 
   const worker = new Worker<DeliveryJobData>(
@@ -41,6 +81,23 @@ export function createRouterWorker(config: RouterWorkerConfig): RouterWorkerRunt
     async (job) => {
       const attempt = Math.max(1, job.attemptsMade + 1);
       const maxAttempts = Math.max(1, job.opts.attempts ?? 1);
+      const canonicalEvent = await eventRepository.getByEventId(job.data.eventId);
+
+      if (!canonicalEvent) {
+        logger.error(
+          {
+            queue: job.queueName,
+            jobId: job.id,
+            eventId: job.data.eventId,
+            destination: job.data.destination,
+            attempt,
+            maxAttempts
+          },
+          'canonical event not found'
+        );
+
+        throw new TerminalDeliveryError(`No canonical event found for event_id "${job.data.eventId}"`);
+      }
 
       await processDeliveryJob(
         {
@@ -48,7 +105,8 @@ export function createRouterWorker(config: RouterWorkerConfig): RouterWorkerRunt
           queueName: job.queueName,
           attemptsMade: job.attemptsMade,
           attempts: maxAttempts,
-          data: job.data
+          data: job.data,
+          event: canonicalEvent
         },
         {
           adapters,

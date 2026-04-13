@@ -5,6 +5,7 @@ export class NoopDestinationAdapter implements DestinationAdapter {
   constructor(public readonly destination: string) {}
 
   async deliver(_job: DeliveryJobEnvelope): Promise<void> {
+    // Noop adapter intentionally ignores the enriched canonical event.
     return;
   }
 }

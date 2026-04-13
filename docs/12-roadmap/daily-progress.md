@@ -157,3 +157,32 @@ This file tracks day-by-day execution progress for roadmap phases.
 - none
 - Next step (next working day):
 - start Phase 3 Meta integration (mapper + API client + contract tests)
+
+## 2026-04-13 (update 7)
+
+- Owner: team
+- Phase: Phase 4 - TikTok and Google Integrations
+- Status: done
+- Completed today:
+- Implemented `TikTokEventsAdapter` with canonical event mapping, `ttclid` propagation, and retry classification
+- Implemented `GoogleConversionAdapter` with `gclid` handling, conversion payload mapping, and retry classification
+- Router worker now fetches canonical event from Postgres before adapter delivery and fails terminal when event is missing
+- Added destination-specific BullMQ retry policies (`meta`, `google`, `tiktok`) in dispatcher
+- Added unit test coverage for adapters, runtime canonical-event fetch path, and destination retry policy
+- Evidence:
+- `apps/router-worker/src/adapters/tiktok-events-adapter.ts`
+- `apps/router-worker/src/adapters/google-conversion-adapter.ts`
+- `apps/router-worker/src/db/event-repository.ts`
+- `apps/router-worker/src/runtime/router-worker-runtime.ts`
+- `apps/tracking-api/src/services/delivery-job-dispatcher.ts`
+- `apps/router-worker/test/tiktok-events-adapter.test.ts`
+- `apps/router-worker/test/google-conversion-adapter.test.ts`
+- `apps/router-worker/test/router-worker-runtime.test.ts`
+- `apps/tracking-api/test/delivery-job-dispatcher.test.ts`
+- `npm run -w @tracking-base/router-worker test` -> pass
+- `npm run -w @tracking-base/router-worker build` -> pass
+- `npm run -w @tracking-base/tracking-api test` -> pass
+- Blockers:
+- none
+- Next step (next working day):
+- implement Phase 3 Meta adapter/client to keep all downstream integrations aligned on one adapter contract

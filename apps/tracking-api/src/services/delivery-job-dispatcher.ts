@@ -8,7 +8,37 @@ export type DeliveryDestination = 'meta' | 'google' | 'tiktok';
 const ROUTER_JOB_NAME = 'deliver-event';
 const DEFAULT_DESTINATIONS: readonly DeliveryDestination[] = ['meta', 'google', 'tiktok'];
 
-const DEFAULT_JOB_OPTIONS: JobsOptions = {
+const DEFAULT_JOB_OPTIONS_BY_DESTINATION: Record<DeliveryDestination, JobsOptions> = {
+  meta: {
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 1000
+    },
+    removeOnComplete: 1000,
+    removeOnFail: 5000
+  },
+  google: {
+    attempts: 5,
+    backoff: {
+      type: 'exponential',
+      delay: 1500
+    },
+    removeOnComplete: 1000,
+    removeOnFail: 5000
+  },
+  tiktok: {
+    attempts: 4,
+    backoff: {
+      type: 'exponential',
+      delay: 1200
+    },
+    removeOnComplete: 1000,
+    removeOnFail: 5000
+  }
+};
+
+const DEFAULT_QUEUE_JOB_OPTIONS: JobsOptions = {
   attempts: 3,
   backoff: {
     type: 'exponential',
@@ -24,6 +54,8 @@ type DeliveryJobPayload = {
   requestedAt: string;
   payloadVersion: number;
 };
+
+export type DeliveryJobQueue = Pick<Queue<DeliveryJobPayload>, 'add' | 'close'>;
 
 export interface DeliveryJobDispatcher {
   enqueueDeliveryJob(event: NormalizedTrackEvent): Promise<void>;
@@ -73,9 +105,13 @@ function toRedisOptions(config: BullMqDispatcherConfig['redis']): RedisOptions {
   };
 }
 
+export function getDeliveryJobOptions(destination: DeliveryDestination): JobsOptions {
+  return DEFAULT_JOB_OPTIONS_BY_DESTINATION[destination];
+}
+
 class BullMqDeliveryJobDispatcher implements DeliveryJobDispatcher {
   constructor(
-    private readonly queue: Queue<DeliveryJobPayload>,
+    private readonly queue: DeliveryJobQueue,
     private readonly destinations: readonly DeliveryDestination[]
   ) {}
 
@@ -94,7 +130,7 @@ class BullMqDeliveryJobDispatcher implements DeliveryJobDispatcher {
             payloadVersion: 1
           },
           {
-            ...DEFAULT_JOB_OPTIONS,
+            ...getDeliveryJobOptions(destination),
             jobId
           }
         );
@@ -117,14 +153,21 @@ export class NoopDeliveryJobDispatcher implements DeliveryJobDispatcher {
   }
 }
 
+export function createDeliveryJobDispatcher(
+  queue: DeliveryJobQueue,
+  destinations: readonly DeliveryDestination[] = DEFAULT_DESTINATIONS
+): DeliveryJobDispatcher {
+  return new BullMqDeliveryJobDispatcher(queue, destinations);
+}
+
 export function createBullMqDeliveryJobDispatcher(config: BullMqDispatcherConfig): DeliveryJobDispatcher {
   const queueOptions: QueueOptions = {
     connection: toRedisOptions(config.redis),
-    defaultJobOptions: DEFAULT_JOB_OPTIONS
+    defaultJobOptions: DEFAULT_QUEUE_JOB_OPTIONS
   };
 
   const queue = new Queue<DeliveryJobPayload>(config.queueName, queueOptions);
   const destinations = config.destinations ?? DEFAULT_DESTINATIONS;
 
-  return new BullMqDeliveryJobDispatcher(queue, destinations);
+  return createDeliveryJobDispatcher(queue, destinations);
 }

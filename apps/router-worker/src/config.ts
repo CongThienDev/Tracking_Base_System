@@ -13,6 +13,14 @@ export type RouterWorkerConfig = {
   queueName: string;
   workerName: string;
   concurrency: number;
+  google: {
+    endpointUrl?: string;
+    apiKey?: string;
+  };
+  tiktok: {
+    endpointUrl?: string;
+    accessToken?: string;
+  };
 };
 
 function parsePositiveInteger(value: string | undefined, fallback: number, fieldName: string): number {
@@ -51,6 +59,14 @@ export function getRouterWorkerConfig(): RouterWorkerConfig {
     },
     queueName,
     workerName,
-    concurrency: parsePositiveInteger(process.env.ROUTER_WORKER_CONCURRENCY, DEFAULT_WORKER_CONCURRENCY, 'ROUTER_WORKER_CONCURRENCY')
+    concurrency: parsePositiveInteger(process.env.ROUTER_WORKER_CONCURRENCY, DEFAULT_WORKER_CONCURRENCY, 'ROUTER_WORKER_CONCURRENCY'),
+    google: {
+      endpointUrl: process.env.GOOGLE_CONVERSIONS_ENDPOINT_URL?.trim() || undefined,
+      apiKey: process.env.GOOGLE_CONVERSIONS_API_KEY?.trim() || undefined
+    },
+    tiktok: {
+      endpointUrl: process.env.TIKTOK_EVENTS_ENDPOINT_URL?.trim() || undefined,
+      accessToken: process.env.TIKTOK_ACCESS_TOKEN?.trim() || undefined
+    }
   };
 }
