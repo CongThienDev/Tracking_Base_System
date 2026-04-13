@@ -8,9 +8,11 @@
   ],
   "scripts": {
     "build": "npm run -w @tracking-base/tracking-api build",
+    "build:shared-contracts": "npm run -w @tracking-base/shared-contracts build",
     "dev": "npm run -w @tracking-base/tracking-api dev",
     "start": "npm run -w @tracking-base/tracking-api start",
     "test": "npm run -w @tracking-base/tracking-api test",
+    "test:shared-contracts": "npm run -w @tracking-base/shared-contracts test",
     "migrate": "npm run -w @tracking-base/tracking-api migrate",
     "build:router-worker": "npm run -w @tracking-base/router-worker build",
     "dev:router-worker": "npm run -w @tracking-base/router-worker dev",
