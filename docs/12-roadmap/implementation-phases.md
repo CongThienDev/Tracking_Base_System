@@ -99,7 +99,7 @@ Allowed status values:
 
 ## Phase 6: Ops and Security Hardening
 
-- Status: `not_started`
+- Status: `done`
 - Objective: production readiness.
 - Deliverables:
 - observability baseline (logs, metrics, alerts)

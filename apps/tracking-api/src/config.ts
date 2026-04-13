@@ -9,6 +9,19 @@ export type AppConfig = {
   nodeEnv: string;
   port: number;
   databaseUrl: string;
+  observability: {
+    metricsEnabled: boolean;
+  };
+  security: {
+    authMode: 'off' | 'shared-secret' | 'signing';
+    authSecret?: string;
+    signatureSkewSeconds: number;
+    rateLimit: {
+      enabled: boolean;
+      windowMs: number;
+      maxRequests: number;
+    };
+  };
   routerQueue: {
     queueName: string;
     redis: {
@@ -21,6 +34,32 @@ export type AppConfig = {
     };
   };
 };
+
+function parseBoolean(value: string | undefined, fallback: boolean): boolean {
+  if (!value) {
+    return fallback;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'true' || normalized === '1' || normalized === 'yes') {
+    return true;
+  }
+
+  if (normalized === 'false' || normalized === '0' || normalized === 'no') {
+    return false;
+  }
+
+  throw new Error(`Invalid boolean value: ${value}`);
+}
+
+function parseRequiredAuthMode(value: string | undefined): 'off' | 'shared-secret' | 'signing' {
+  const normalized = (value ?? 'off').trim().toLowerCase();
+  if (normalized === 'off' || normalized === 'shared-secret' || normalized === 'signing') {
+    return normalized;
+  }
+
+  throw new Error(`TRACKING_API_AUTH_MODE must be one of: off, shared-secret, signing`);
+}
 
 function parseOptionalPositiveInteger(value: string | undefined, fieldName: string): number | undefined {
   if (!value) {
@@ -61,10 +100,30 @@ export function getConfig(): AppConfig {
     throw new Error('DATABASE_URL is required');
   }
 
+  const authMode = parseRequiredAuthMode(process.env.TRACKING_API_AUTH_MODE);
+  const authSecret = process.env.TRACKING_API_SECRET?.trim() || undefined;
+
+  if (authMode !== 'off' && !authSecret) {
+    throw new Error('TRACKING_API_SECRET is required when TRACKING_API_AUTH_MODE is enabled');
+  }
+
   return {
     nodeEnv: process.env.NODE_ENV ?? 'development',
     port,
     databaseUrl,
+    observability: {
+      metricsEnabled: parseBoolean(process.env.METRICS_ENABLED, true)
+    },
+    security: {
+      authMode,
+      authSecret,
+      signatureSkewSeconds: parseOptionalPositiveInteger(process.env.TRACKING_SIGNATURE_SKEW_SECONDS, 'TRACKING_SIGNATURE_SKEW_SECONDS') ?? 300,
+      rateLimit: {
+        enabled: parseBoolean(process.env.TRACKING_RATE_LIMIT_ENABLED, false),
+        windowMs: parseOptionalPositiveInteger(process.env.TRACKING_RATE_LIMIT_WINDOW_MS, 'TRACKING_RATE_LIMIT_WINDOW_MS') ?? 60_000,
+        maxRequests: parseOptionalPositiveInteger(process.env.TRACKING_RATE_LIMIT_MAX_REQUESTS, 'TRACKING_RATE_LIMIT_MAX_REQUESTS') ?? 120
+      }
+    },
     routerQueue: {
       queueName: process.env.ROUTER_QUEUE_NAME?.trim() || 'router-deliveries',
       redis: {

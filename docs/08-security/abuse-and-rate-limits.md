@@ -15,6 +15,14 @@
 - signature verification for trusted server senders
 - duplicate suppression through `event_id`
 
+## Baseline policy
+
+- apply a coarse per-IP limit to unauthenticated browser traffic
+- apply a tighter per-client limit to signed server traffic
+- keep burst capacity small enough to absorb short spikes without masking abuse
+- reject requests that exceed size or rate policy before they reach downstream queues
+- treat repeated auth failures as suspicious traffic and rate-limit them aggressively
+
 ## Rule
 
 Rate limiting protects availability, but deduplication protects data integrity. Both are required.

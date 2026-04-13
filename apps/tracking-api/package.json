@@ -10,7 +10,8 @@
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
     "test": "vitest run",
-    "migrate": "tsx scripts/migrate.ts"
+    "migrate": "tsx scripts/migrate.ts",
+    "validate:delete-by-user": "tsx scripts/validate-delete-by-user.ts"
   },
   "dependencies": {
     "bullmq": "^5.58.2",

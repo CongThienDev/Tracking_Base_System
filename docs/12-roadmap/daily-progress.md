@@ -274,3 +274,64 @@ This file tracks day-by-day execution progress for roadmap phases.
 - none
 - Next step (next working day):
 - start Phase 6 ops/security hardening baseline (observability + auth/rate-limit policy)
+
+## 2026-04-13 (update 12)
+
+- Owner: team
+- Phase: Phase 6 - Ops and Security Hardening
+- Status: in_progress
+- Completed today:
+- Added request auth primitives for shared-secret and HMAC signing validation
+- Added in-memory rate limiter and integrated `/track` guard path with `401` and `429` handling
+- Added in-memory ingestion metrics collector and exposed `/metrics` endpoint
+- Added `/ready` readiness probe with DB check and error logging
+- Added Postgres privacy repository for delete-by-user across `event_deliveries`, `events`, and `users`
+- Added delete-by-user validation script and unit tests for auth/rate-limit/metrics/privacy repository
+- Hardened ops/security docs for alert baselines, auth header/signature policy, abuse controls, and privacy deletion runbook
+- Evidence:
+- `apps/tracking-api/src/security/request-auth.ts`
+- `apps/tracking-api/src/security/rate-limit.ts`
+- `apps/tracking-api/src/observability/ingestion-metrics.ts`
+- `apps/tracking-api/src/repositories/postgres-privacy-repository.ts`
+- `apps/tracking-api/src/app.ts`
+- `apps/tracking-api/src/routes/track.ts`
+- `apps/tracking-api/scripts/validate-delete-by-user.ts`
+- `apps/tracking-api/test/security/request-auth.test.ts`
+- `apps/tracking-api/test/security/rate-limit.test.ts`
+- `apps/tracking-api/test/observability/ingestion-metrics.test.ts`
+- `apps/tracking-api/test/postgres-privacy-repository.test.ts`
+- `apps/tracking-api/test/track-route.test.ts`
+- `docs/07-ops/observability.md`
+- `docs/07-ops/runbooks.md`
+- `docs/08-security/auth-and-signing.md`
+- `docs/08-security/abuse-and-rate-limits.md`
+- `docs/08-security/privacy-and-gdpr.md`
+- `npm run -w @tracking-base/tracking-api build` -> pass
+- `npm run -w @tracking-base/tracking-api test` -> pass
+- `npm run -w @tracking-base/router-worker build` -> pass
+- `npm run -w @tracking-base/router-worker test` -> pass
+- `npm run -w @tracking-base/shared-contracts build` -> pass
+- `npm run -w @tracking-base/shared-contracts test` -> pass
+- `npm run build` -> pass
+- `npm run build:router-worker` -> pass
+- Blockers:
+- `npm run -w @tracking-base/tracking-api validate:delete-by-user` requires `TEST_DATABASE_URL`; run is currently blocked in this workspace because the variable is not set.
+- Next step (next working day):
+- set valid `TEST_DATABASE_URL`, run `validate:delete-by-user`, then close Phase 6 gate
+
+## 2026-04-13 (update 13)
+
+- Owner: team
+- Phase: Phase 6 - Ops and Security Hardening
+- Status: done
+- Completed today:
+- Ran DB-backed delete-by-user validation against Railway public Postgres and confirmed expected deletion behavior
+- Fixed validation seed SQL placeholder mismatch in delete-by-user script and re-ran successfully
+- Closed Phase 6 gate with full evidence across build, tests, and runtime validation
+- Evidence:
+- `apps/tracking-api/scripts/validate-delete-by-user.ts`
+- `npm run -w @tracking-base/tracking-api validate:delete-by-user` with Railway `TEST_DATABASE_URL` -> `delete-by-user validation passed`
+- Blockers:
+- none
+- Next step (next working day):
+- start Phase 7 UAT and cutover planning (canary, parity checks, rollback rehearsal)

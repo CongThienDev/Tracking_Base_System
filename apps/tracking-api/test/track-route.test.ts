@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../src/app.js';
+import type { AppConfig } from '../src/config.js';
 import {
   createLoggerSpy,
   InMemoryEventRepository,
@@ -12,6 +13,32 @@ describe('POST /track', () => {
   beforeEach(() => {
     repository = new InMemoryEventRepository();
   });
+
+  function buildTestConfig(overrides: Partial<AppConfig> = {}): AppConfig {
+    return {
+      nodeEnv: 'test',
+      port: 0,
+      databaseUrl: 'postgres://unused',
+      observability: {
+        metricsEnabled: true
+      },
+      security: {
+        authMode: 'off',
+        authSecret: 'top-secret',
+        signatureSkewSeconds: 300,
+        rateLimit: {
+          enabled: false,
+          windowMs: 60_000,
+          maxRequests: 100
+        }
+      },
+      routerQueue: {
+        queueName: 'router-deliveries',
+        redis: {}
+      },
+      ...overrides
+    };
+  }
 
   it('stores a valid event and returns event_id', async () => {
     const deliveryJobDispatcher = new RecordingDeliveryJobDispatcher();
@@ -182,6 +209,151 @@ describe('POST /track', () => {
       }),
       'failed to enqueue delivery job'
     );
+
+    await app.close();
+  });
+
+  it('rejects unauthenticated request when shared-secret mode is enabled', async () => {
+    const deliveryJobDispatcher = new RecordingDeliveryJobDispatcher();
+    const logger = createLoggerSpy();
+    const app = buildApp({
+      eventRepository: repository,
+      deliveryJobDispatcher,
+      logger,
+      config: buildTestConfig({
+        security: {
+          authMode: 'shared-secret',
+          authSecret: 'top-secret',
+          signatureSkewSeconds: 300,
+          rateLimit: {
+            enabled: false,
+            windowMs: 60_000,
+            maxRequests: 100
+          }
+        }
+      })
+    });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/track',
+      headers: {
+        'content-type': 'application/json'
+      },
+      payload: {
+        event_id: 'evt-auth-001',
+        event_name: 'purchase',
+        session: {
+          session_id: 'sess-auth-001'
+        }
+      }
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toMatchObject({
+      status: 'error',
+      code: 'unauthorized'
+    });
+    expect(repository.count()).toBe(0);
+
+    await app.close();
+  });
+
+  it('rate limits excessive requests when limiter is enabled', async () => {
+    const deliveryJobDispatcher = new RecordingDeliveryJobDispatcher();
+    const logger = createLoggerSpy();
+    const app = buildApp({
+      eventRepository: repository,
+      deliveryJobDispatcher,
+      logger,
+      config: buildTestConfig({
+        security: {
+          authMode: 'off',
+          signatureSkewSeconds: 300,
+          rateLimit: {
+            enabled: true,
+            windowMs: 60_000,
+            maxRequests: 1
+          }
+        }
+      })
+    });
+
+    const first = await app.inject({
+      method: 'POST',
+      url: '/track',
+      headers: {
+        'content-type': 'application/json'
+      },
+      payload: {
+        event_id: 'evt-rate-001',
+        event_name: 'purchase',
+        session: {
+          session_id: 'sess-rate-001'
+        }
+      }
+    });
+
+    const second = await app.inject({
+      method: 'POST',
+      url: '/track',
+      headers: {
+        'content-type': 'application/json'
+      },
+      payload: {
+        event_id: 'evt-rate-002',
+        event_name: 'purchase',
+        session: {
+          session_id: 'sess-rate-002'
+        }
+      }
+    });
+
+    expect(first.statusCode).toBe(200);
+    expect(second.statusCode).toBe(429);
+    expect(second.headers['retry-after']).toBeDefined();
+
+    await app.close();
+  });
+
+  it('exposes ingestion counters on /metrics', async () => {
+    const deliveryJobDispatcher = new RecordingDeliveryJobDispatcher();
+    const logger = createLoggerSpy();
+    const app = buildApp({
+      eventRepository: repository,
+      deliveryJobDispatcher,
+      logger,
+      config: buildTestConfig()
+    });
+
+    await app.inject({
+      method: 'POST',
+      url: '/track',
+      headers: {
+        'content-type': 'application/json'
+      },
+      payload: {
+        event_id: 'evt-metrics-001',
+        event_name: 'purchase',
+        session: {
+          session_id: 'sess-metrics-001'
+        }
+      }
+    });
+
+    const metricsResponse = await app.inject({
+      method: 'GET',
+      url: '/metrics'
+    });
+
+    expect(metricsResponse.statusCode).toBe(200);
+    expect(metricsResponse.json()).toMatchObject({
+      status: 'ok',
+      counters: {
+        track_requests_total: 1,
+        track_success_total: 1
+      }
+    });
 
     await app.close();
   });

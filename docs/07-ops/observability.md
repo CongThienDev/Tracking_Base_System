@@ -30,10 +30,16 @@
 - retry rate by destination
 - DLQ count
 - p95 ingestion latency
+- auth failure rate by caller type, with a baseline alert at `> 5%` over 5 minutes
+- signature verification failure count, with a baseline alert at `>= 20` failures in 10 minutes for one caller
+- rate-limit hit rate, with a baseline alert at `> 2%` of requests sustained for 10 minutes
+- delete-by-user success count and delete-by-user failure count
+- delete-by-user rows removed per run for `event_deliveries`, `events`, and `users`
+- validation script exit status, emitted as a one-shot operational check after changes to deletion logic
 
 ## Tracing
 
-At minimum, correlate logs by `event_id` and request ID.
+At minimum, correlate logs by `event_id`, request ID, caller identity, and auth outcome.
 
 ## Alerts
 
@@ -41,6 +47,9 @@ At minimum, correlate logs by `event_id` and request ID.
 - queue backlog growth
 - ingestion latency breach
 - duplicate rate anomaly
+- repeated auth rejection spikes for one caller or route
+- rate-limit saturation on a single client bucket or IP range
+- delete-by-user validation failure after a deployment or migration
 
 ## Related docs
 

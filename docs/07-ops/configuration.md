@@ -21,8 +21,17 @@
 
 ### Security
 
-- `TRACKING_API_SECRET` or request signing secret
+- `TRACKING_API_AUTH_MODE` (`off|shared-secret|signing`)
+- `TRACKING_API_SECRET`
+- `TRACKING_SIGNATURE_SKEW_SECONDS`
+- `TRACKING_RATE_LIMIT_ENABLED`
+- `TRACKING_RATE_LIMIT_WINDOW_MS`
+- `TRACKING_RATE_LIMIT_MAX_REQUESTS`
 - `ALLOWED_ORIGINS` if browser-origin policy is enforced
+
+### Observability
+
+- `METRICS_ENABLED`
 
 ### Meta
 
