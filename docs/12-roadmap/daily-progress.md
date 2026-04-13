@@ -335,3 +335,44 @@ This file tracks day-by-day execution progress for roadmap phases.
 - none
 - Next step (next working day):
 - start Phase 7 UAT and cutover planning (canary, parity checks, rollback rehearsal)
+
+## 2026-04-13 (update 14)
+
+- Owner: Worker C
+- Phase: Phase 7 - UAT and Cutover
+- Status: in_progress
+- Completed today:
+- Kicked off Phase 7 with explicit UAT/cutover scope and gate checklist language aligned to current execution state
+- Synced roadmap control artifacts so dashboard and phase status now represent `Phase 6 = done` and `Phase 7 = in_progress`
+- Added near-term backlog tasks for canary execution, parity validation, and rollback rehearsal evidence
+- Evidence:
+- `docs/12-roadmap/implementation-phases.md`
+- `docs/12-roadmap/phases-dashboard.js`
+- `docs/12-roadmap/backlog.md`
+- `docs/12-roadmap/daily-progress.md`
+- Blockers:
+- none
+- Next step (next working day):
+- finalize UAT acceptance thresholds, execute canary window, and publish first parity report with rollback drill checklist
+
+## 2026-04-13 (update 15)
+
+- Owner: team
+- Phase: Phase 7 - UAT and Cutover
+- Status: in_progress
+- Completed today:
+- Finalized Phase 7 UAT acceptance matrix with concrete scenarios and numeric pass/fail thresholds
+- Added Phase 7 parity report template and recorded tooling dry-run output from parity CLI for baseline validation
+- Added rollback rehearsal checklist with execution timing targets and evidence template for sign-off
+- Linked active Phase 7 artifacts from implementation phases and marked UAT-threshold gate item complete
+- Evidence:
+- `docs/12-roadmap/phase-7-uat-acceptance-matrix.md`
+- `docs/12-roadmap/phase-7-parity-report.md`
+- `docs/12-roadmap/phase-7-rollback-rehearsal.md`
+- `docs/12-roadmap/implementation-phases.md`
+- `npm run -w @tracking-base/tracking-api test -- test/check-conversion-parity.test.ts` -> pass
+- `npm run parity:check -- --new-path <sample> --legacy-path <sample> --threshold 0.20` -> pass (dry-run tooling check)
+- Blockers:
+- production canary window has not been executed yet, so parity sign-off and rollback drill evidence are still pending
+- Next step (next working day):
+- execute canary window with real traffic aggregates, publish production parity report, run rollback rehearsal, then capture final go/no-go decision

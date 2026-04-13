@@ -67,7 +67,7 @@ const phases = [
   {
     id: 6,
     name: "Phase 6 - Ops and Security Hardening",
-    status: "not_started",
+    status: "done",
     objective: "Production readiness on operations and security.",
     deliverables: ["Observability baseline", "Runbooks", "Auth/signing + rate-limit policy"],
     exitCriteria: ["Service is operable with clear failure recovery and security controls."],
@@ -76,10 +76,17 @@ const phases = [
   {
     id: 7,
     name: "Phase 7 - UAT and Cutover",
-    status: "not_started",
+    status: "in_progress",
     objective: "Controlled production adoption.",
-    deliverables: ["Canary rollout", "Parity checks", "Rollback strategy"],
-    exitCriteria: ["Rollout accepted with stable conversion integrity."],
+    deliverables: [
+      "UAT scope + acceptance matrix",
+      "Canary rollout runbook",
+      "Parity checks against previous tracking path",
+      "Rollback rehearsal plan"
+    ],
+    exitCriteria: [
+      "Cutover approved with stable conversion integrity and no unresolved P0/P1 UAT defects."
+    ],
     flowImpact: "Moves from technical readiness to controlled business rollout."
   }
 ];

@@ -111,14 +111,34 @@ Allowed status values:
 
 ## Phase 7: UAT and Cutover
 
-- Status: `not_started`
+- Status: `in_progress`
 - Objective: controlled production adoption.
 - Deliverables:
-- canary rollout plan
-- parity checks against previous tracking path
-- rollback strategy
+- UAT scope and acceptance matrix for conversion-critical events and identity fields
+- canary rollout runbook with traffic ramp steps and owner handoff points
+- parity check checklist and report template against previous tracking path (`event_count`, conversion rate, dedup rate, destination success/failure)
+- rollback rehearsal checklist with trigger thresholds and communication path
 - Exit criteria:
-- rollout accepted with stable conversion integrity
+- production cutover approved with stable conversion integrity and no unresolved P0/P1 UAT defects
+- parity check window passes agreed thresholds across canary and baseline paths
+- rollback drill evidence captured and operationally executable
+
+### Phase 7 gate checklist (current)
+
+- [x] Kickoff completed with clear scope and ownership
+- [x] Baseline artifacts prepared (phase status, dashboard alignment, near-term backlog)
+- [x] UAT test scenarios and acceptance thresholds finalized
+- [ ] Canary execution completed and monitored for agreed window
+- [ ] Parity report reviewed and signed off
+- [ ] Rollback rehearsal executed with evidence links
+- [ ] Final go/no-go decision captured and phase moved to `done`
+
+### Phase 7 active artifacts
+
+- [UAT acceptance matrix](phase-7-uat-acceptance-matrix.md)
+- [Parity report](phase-7-parity-report.md)
+- [Rollback rehearsal checklist](phase-7-rollback-rehearsal.md)
+- [Ops runbook](../07-ops/runbooks.md)
 
 ## Review gate (mandatory)
 

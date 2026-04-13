@@ -11,7 +11,8 @@
     "start": "node dist/server.js",
     "test": "vitest run",
     "migrate": "tsx scripts/migrate.ts",
-    "validate:delete-by-user": "tsx scripts/validate-delete-by-user.ts"
+    "validate:delete-by-user": "tsx scripts/validate-delete-by-user.ts",
+    "parity:check": "tsx scripts/check-conversion-parity.ts"
   },
   "dependencies": {
     "bullmq": "^5.58.2",

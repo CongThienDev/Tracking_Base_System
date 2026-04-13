@@ -15,6 +15,7 @@
     "test:shared-contracts": "npm run -w @tracking-base/shared-contracts test",
     "migrate": "npm run -w @tracking-base/tracking-api migrate",
     "validate:delete-by-user": "npm run -w @tracking-base/tracking-api validate:delete-by-user",
+    "parity:check": "npm run -w @tracking-base/tracking-api parity:check --",
     "build:router-worker": "npm run -w @tracking-base/router-worker build",
     "dev:router-worker": "npm run -w @tracking-base/router-worker dev",
     "start:router-worker": "npm run -w @tracking-base/router-worker start",
