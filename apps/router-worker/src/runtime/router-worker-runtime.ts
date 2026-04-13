@@ -2,6 +2,7 @@ import { Worker } from 'bullmq';
 import { createConsoleWorkerLogger, type WorkerLogger } from '../logging/worker-logger.js';
 import type { DestinationAdapterRegistry } from '../adapters/destination-adapter.js';
 import { GoogleConversionAdapter } from '../adapters/google-conversion-adapter.js';
+import { MetaConversionsAdapter } from '../adapters/meta-conversions-adapter.js';
 import { NoopDestinationAdapter } from '../adapters/noop-destination-adapter.js';
 import { TikTokEventsAdapter } from '../adapters/tiktok-events-adapter.js';
 import type { DeliveryJobData } from '../types.js';
@@ -24,7 +25,34 @@ export type RouterWorkerRuntime = {
 };
 
 function buildAdapterRegistry(config: RouterWorkerConfig, logger: WorkerLogger): DestinationAdapterRegistry {
-  const metaAdapter = new NoopDestinationAdapter('meta');
+  let metaAdapter: MetaConversionsAdapter | NoopDestinationAdapter;
+
+  if (config.meta.endpointUrl && config.meta.pixelId && config.meta.accessToken) {
+    metaAdapter = new MetaConversionsAdapter({
+      endpointUrl: config.meta.endpointUrl,
+      pixelId: config.meta.pixelId,
+      accessToken: config.meta.accessToken,
+      testEventCode: config.meta.testEventCode
+    });
+  } else {
+    metaAdapter = new NoopDestinationAdapter('meta');
+  }
+
+  if (metaAdapter instanceof NoopDestinationAdapter) {
+    const missingMetaConfig = [
+      !config.meta.endpointUrl ? 'meta.endpointUrl' : null,
+      !config.meta.pixelId ? 'meta.pixelId' : null,
+      !config.meta.accessToken ? 'meta.accessToken' : null
+    ].filter((field): field is string => field !== null);
+
+    logger.warn(
+      {
+        destination: 'meta',
+        missingConfig: missingMetaConfig
+      },
+      'meta config missing; using noop adapter'
+    );
+  }
 
   const googleAdapter = config.google.endpointUrl
     ? new GoogleConversionAdapter(config.google.endpointUrl, config.google.apiKey)

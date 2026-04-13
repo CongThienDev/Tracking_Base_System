@@ -186,3 +186,44 @@ This file tracks day-by-day execution progress for roadmap phases.
 - none
 - Next step (next working day):
 - implement Phase 3 Meta adapter/client to keep all downstream integrations aligned on one adapter contract
+
+## 2026-04-13 (update 8)
+
+- Owner: Worker C
+- Phase: Phase 3 - Meta Integration
+- Status: blocked
+- Completed today:
+- Added processor coverage for terminal failure classification logging on Meta deliveries
+- Verified the branch still routes Meta through `NoopDestinationAdapter` in router-worker runtime, so no Meta mapper/client implementation is present yet
+- Evidence:
+- `apps/router-worker/test/delivery-job-processor.test.ts`
+- `apps/router-worker/src/runtime/router-worker-runtime.ts`
+- `apps/router-worker/src/processor/process-delivery-job.ts`
+- Blockers:
+- Meta mapper/client code is not present in the branch, so Phase 3 cannot be marked `done` yet
+- Next step (next working day):
+- implement the Meta mapper/client and wire it into router-worker runtime, then re-evaluate the Phase 3 gate
+
+## 2026-04-13 (update 9)
+
+- Owner: team
+- Phase: Phase 3 - Meta Integration
+- Status: done
+- Completed today:
+- Implemented `MetaConversionsAdapter` with canonical event mapping (`event_id`, mapped `event_name`, unix `event_time`, `action_source`, `user_data`, `custom_data`)
+- Added Meta runtime wiring with config-driven enablement and noop fallback when required Meta config is missing
+- Added contract tests for Meta payload shape and retry/terminal error classification
+- Added processor test for terminal failure logging classification on Meta delivery path
+- Evidence:
+- `apps/router-worker/src/adapters/meta-conversions-adapter.ts`
+- `apps/router-worker/src/runtime/router-worker-runtime.ts`
+- `apps/router-worker/src/config.ts`
+- `apps/router-worker/test/meta-conversions-adapter.test.ts`
+- `apps/router-worker/test/router-worker-runtime.test.ts`
+- `apps/router-worker/test/delivery-job-processor.test.ts`
+- `npm run -w @tracking-base/router-worker build` -> pass
+- `npm run -w @tracking-base/router-worker test` -> pass
+- Blockers:
+- none
+- Next step (next working day):
+- move to Phase 5 frontend/server client contract after validating environment config for Meta/Google/TikTok endpoints

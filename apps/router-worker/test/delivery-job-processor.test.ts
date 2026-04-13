@@ -101,4 +101,41 @@ describe('processDeliveryJob', () => {
       message: 'no destination adapter registered'
     });
   });
+
+  it('logs terminal failures as permanent errors for meta deliveries', async () => {
+    const logger = new RecordingLogger();
+
+    await expect(
+      processDeliveryJob(buildJob({ attemptsMade: 1 }), {
+        adapters: {
+          meta: {
+            destination: 'meta',
+            async deliver(): Promise<void> {
+              throw new TerminalDeliveryError('invalid Meta payload');
+            }
+          }
+        },
+        logger
+      })
+    ).rejects.toBeInstanceOf(TerminalDeliveryError);
+
+    expect(logger.entries).toHaveLength(2);
+    expect(logger.entries[0]).toMatchObject({
+      level: 'info',
+      message: 'delivery job started'
+    });
+    expect(logger.entries[1]).toMatchObject({
+      level: 'error',
+      message: 'delivery job failed permanently',
+      meta: {
+        destination: 'meta',
+        retryable: false,
+        shouldRetry: false,
+        error: {
+          name: 'TerminalDeliveryError',
+          message: 'invalid Meta payload'
+        }
+      }
+    });
+  });
 });

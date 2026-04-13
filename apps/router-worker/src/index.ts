@@ -1,5 +1,6 @@
 export * from './adapters/destination-adapter.js';
 export * from './adapters/google-conversion-adapter.js';
+export * from './adapters/meta-conversions-adapter.js';
 export * from './adapters/noop-destination-adapter.js';
 export * from './adapters/tiktok-events-adapter.js';
 export * from './config.js';

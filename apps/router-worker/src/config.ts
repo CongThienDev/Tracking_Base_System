@@ -13,6 +13,12 @@ export type RouterWorkerConfig = {
   queueName: string;
   workerName: string;
   concurrency: number;
+  meta: {
+    endpointUrl?: string;
+    pixelId?: string;
+    accessToken?: string;
+    testEventCode?: string;
+  };
   google: {
     endpointUrl?: string;
     apiKey?: string;
@@ -60,6 +66,12 @@ export function getRouterWorkerConfig(): RouterWorkerConfig {
     queueName,
     workerName,
     concurrency: parsePositiveInteger(process.env.ROUTER_WORKER_CONCURRENCY, DEFAULT_WORKER_CONCURRENCY, 'ROUTER_WORKER_CONCURRENCY'),
+    meta: {
+      endpointUrl: process.env.META_CONVERSIONS_ENDPOINT_URL?.trim() || undefined,
+      pixelId: process.env.META_PIXEL_ID?.trim() || undefined,
+      accessToken: process.env.META_ACCESS_TOKEN?.trim() || undefined,
+      testEventCode: process.env.META_TEST_EVENT_CODE?.trim() || undefined
+    },
     google: {
       endpointUrl: process.env.GOOGLE_CONVERSIONS_ENDPOINT_URL?.trim() || undefined,
       apiKey: process.env.GOOGLE_CONVERSIONS_API_KEY?.trim() || undefined

@@ -1,7 +1,7 @@
-import { vi } from 'vitest';
-import { describe, expect, it, beforeEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TerminalDeliveryError } from '../src/processor/delivery-errors.js';
 import type { CanonicalEventRecord, DeliveryJobData } from '../src/types.js';
+import type { RouterWorkerConfig } from '../src/config.js';
 
 const runtimeMocks = vi.hoisted(() => {
   const workerInstances: Array<{
@@ -21,6 +21,7 @@ const runtimeMocks = vi.hoisted(() => {
   };
   const getDbPool = vi.fn(() => ({ query: vi.fn() }));
   const closeDbPool = vi.fn().mockResolvedValue(undefined);
+  const fetch = vi.fn();
 
   return {
     workerInstances,
@@ -29,7 +30,8 @@ const runtimeMocks = vi.hoisted(() => {
     write,
     logger,
     getDbPool,
-    closeDbPool
+    closeDbPool,
+    fetch
   };
 });
 
@@ -107,6 +109,19 @@ vi.mock('../src/adapters/noop-destination-adapter.js', () => ({
 
 import { createRouterWorker } from '../src/runtime/router-worker-runtime.js';
 
+function buildConfig(meta: Partial<RouterWorkerConfig['meta']> = {}): RouterWorkerConfig {
+  return {
+    databaseUrl: 'postgres://example',
+    redis: {} as never,
+    queueName: 'router-deliveries',
+    workerName: 'router-worker-test',
+    concurrency: 1,
+    meta,
+    google: {},
+    tiktok: {}
+  };
+}
+
 function buildJob(overrides: Partial<BullJobLike> = {}): BullJobLike {
   const defaults: BullJobLike = {
     id: 'job-001',
@@ -157,25 +172,30 @@ function buildEvent(): CanonicalEventRecord {
 describe('createRouterWorker', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal('fetch', runtimeMocks.fetch);
+    runtimeMocks.fetch.mockReset();
     runtimeMocks.workerInstances.length = 0;
     runtimeMocks.repositoryInstances.length = 0;
   });
 
-  it('fails terminal when the canonical event is missing', async () => {
-    const runtime = createRouterWorker({
-      databaseUrl: 'postgres://example',
-      redis: {} as never,
-      queueName: 'router-deliveries',
-      workerName: 'router-worker-test',
-      concurrency: 1,
-      google: {},
-      tiktok: {}
-    });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('falls back to noop meta delivery when config is incomplete', async () => {
+    const runtime = createRouterWorker(buildConfig({}));
 
     runtimeMocks.repositoryInstances[0].getByEventId.mockResolvedValueOnce(null);
 
     await expect(runtimeMocks.workerInstances[0].processor(buildJob())).rejects.toBeInstanceOf(TerminalDeliveryError);
 
+    expect(runtimeMocks.logger.warn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        destination: 'meta',
+        missingConfig: expect.arrayContaining(['meta.endpointUrl', 'meta.pixelId', 'meta.accessToken'])
+      }),
+      'meta config missing; using noop adapter'
+    );
     expect(runtimeMocks.repositoryInstances[0].getByEventId).toHaveBeenCalledWith('evt-001');
     expect(runtimeMocks.adapterDeliver).not.toHaveBeenCalled();
     expect(runtimeMocks.write).not.toHaveBeenCalled();
@@ -183,17 +203,9 @@ describe('createRouterWorker', () => {
     await runtime.close();
   });
 
-  it('fetches the event, calls the adapter, and marks the delivery as delivered', async () => {
+  it('fetches the event, calls the noop adapter fallback, and marks the delivery as delivered', async () => {
     const event = buildEvent();
-    const runtime = createRouterWorker({
-      databaseUrl: 'postgres://example',
-      redis: {} as never,
-      queueName: 'router-deliveries',
-      workerName: 'router-worker-test',
-      concurrency: 1,
-      google: {},
-      tiktok: {}
-    });
+    const runtime = createRouterWorker(buildConfig({}));
 
     runtimeMocks.repositoryInstances[0].getByEventId.mockResolvedValueOnce(event);
 
@@ -208,6 +220,68 @@ describe('createRouterWorker', () => {
       },
       event
     });
+    expect(runtimeMocks.write).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventId: 'evt-001',
+        destination: 'meta',
+        status: 'delivered',
+        deliveredAt: expect.any(Date)
+      })
+    );
+
+    await runtime.close();
+  });
+
+  it('uses the Meta conversions adapter when config is complete', async () => {
+    const event = buildEvent();
+    runtimeMocks.fetch.mockResolvedValueOnce(new Response('{"success":true}', { status: 200, statusText: 'OK' }));
+    const runtime = createRouterWorker(
+      buildConfig({
+        endpointUrl: 'https://graph.facebook.com/v20.0',
+        pixelId: '1234567890',
+        accessToken: 'meta-access-token',
+        testEventCode: 'TEST123'
+      })
+    );
+
+    runtimeMocks.repositoryInstances[0].getByEventId.mockResolvedValueOnce(event);
+
+    await expect(runtimeMocks.workerInstances[0].processor(buildJob())).resolves.toBeUndefined();
+
+    expect(runtimeMocks.adapterDeliver).not.toHaveBeenCalled();
+    expect(runtimeMocks.fetch).toHaveBeenCalledTimes(1);
+
+    const [requestUrl, requestInit] = runtimeMocks.fetch.mock.calls[0] ?? [];
+    expect(requestUrl).toBe('https://graph.facebook.com/v20.0/1234567890/events?access_token=meta-access-token');
+    expect(requestInit).toMatchObject({
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json'
+      }
+    });
+
+    const body = JSON.parse(String(requestInit?.body));
+    expect(body).toEqual({
+      data: [
+        {
+          event_name: 'Purchase',
+          event_time: 1776074400,
+          event_id: 'evt-001',
+          action_source: 'website',
+          user_data: {
+            em: ['hash-123'],
+            client_ip_address: '203.0.113.10',
+            client_user_agent: 'Mozilla/5.0'
+          },
+          custom_data: {
+            value: 42.5,
+            currency: 'USD'
+          }
+        }
+      ],
+      test_event_code: 'TEST123'
+    });
+
     expect(runtimeMocks.write).toHaveBeenCalledWith(
       expect.objectContaining({
         eventId: 'evt-001',

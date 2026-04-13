@@ -65,7 +65,7 @@ Allowed status values:
 
 ## Phase 3: Meta Integration
 
-- Status: `not_started`
+- Status: `done`
 - Objective: first real downstream integration.
 - Deliverables:
 - Meta mapper and client
