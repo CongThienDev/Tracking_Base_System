@@ -50,6 +50,98 @@
 - if the script fails, inspect delete ordering first, then the seeded fixture data, then any table constraints
 - rerun validation after the fix before marking the workflow ready
 
+## Local readiness runbook
+
+Use this when you want to run the queue path locally end to end.
+
+### What needs to be up
+
+- Redis for BullMQ
+- `tracking-api`
+- `router-worker`
+
+### Environment layout
+
+- `apps/tracking-api/.env` is loaded when you run the API workspace script
+- `apps/router-worker/.env` is loaded when you run the worker workspace script
+- the two apps do not read a shared repo-root `.env` file by default, so copy the values into each workspace that needs them
+
+Recommended minimum values:
+
+```bash
+# Redis
+REDIS_URL=redis://localhost:6379/0
+
+# API
+PORT=3000
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/tracking_base
+TRACKING_API_AUTH_MODE=off
+
+# Worker
+ROUTER_QUEUE_NAME=router-deliveries
+ROUTER_WORKER_NAME=router-delivery-worker
+ROUTER_WORKER_CONCURRENCY=5
+```
+
+### Start Redis
+
+Use any local Redis you already trust. Common options:
+
+```bash
+# Docker
+docker run --rm -p 6379:6379 redis:7-alpine
+
+# Local service
+redis-server
+```
+
+### Start the API
+
+If you only need the API:
+
+```bash
+npm run dev:api
+```
+
+If you want the API plus worker in separate terminals:
+
+```bash
+npm run dev:api
+npm run dev:worker
+```
+
+If you want both processes launched from one terminal after Redis is already up:
+
+```bash
+npm run dev:stack
+```
+
+### Start the worker
+
+The worker needs Redis and can run without `DATABASE_URL`, but delivery state persistence is disabled until Postgres is configured.
+
+```bash
+npm run dev:worker
+```
+
+### Expected queued-only state
+
+If Redis is up but Postgres is not configured for the worker, the system can still accept events and enqueue delivery jobs. In that case:
+
+- `tracking-api` should return accepted responses for new events
+- jobs should appear in the `router-deliveries` queue
+- the worker should log that `DATABASE_URL` is missing and that canonical event fetch or delivery state updates are disabled
+
+That state is useful for proving the queue path works, but it is not a complete end-to-end delivery setup.
+
+### Troubleshooting queued-only states
+
+- If the API accepts events but nothing reaches the worker, confirm both processes point at the same `REDIS_URL`
+- If the worker exits immediately, check that one of `REDIS_URL` or `REDIS_HOST` is set
+- If jobs are queued but never processed, confirm the worker name is not reusing a stale paused instance
+- If delivery state never updates, set `DATABASE_URL` for the worker and restart it
+- If you see retries but no terminal failure, inspect the worker logs for retryable destination errors before changing queue settings
+
 ## Phase 7 UAT and cutover runbook
 
 ### Scope and owners

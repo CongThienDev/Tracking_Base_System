@@ -38,6 +38,32 @@ This repo now includes an operational frontend app:
 - Default frontend URL: `http://localhost:4173`
 - API target in local dev: proxied from `/api/*` to `http://localhost:3000`
 
+## Local ops start
+
+To run the ingestion and routing path locally, start these pieces in order:
+
+1. Redis
+2. `tracking-api`
+3. `router-worker`
+
+Convenience scripts:
+
+```bash
+npm run dev:api
+npm run dev:worker
+npm run dev:stack
+```
+
+The API and worker each load dotenv from their own workspace directory. Put the API values in `apps/tracking-api/.env`, and put the worker values in `apps/router-worker/.env` if you are not exporting them in your shell.
+
+Minimum local queue settings:
+
+```bash
+REDIS_URL=redis://localhost:6379/0
+ROUTER_QUEUE_NAME=router-deliveries
+ROUTER_WORKER_NAME=router-delivery-worker
+```
+
 ## Repository intent
 
 This repository is documentation-first. The docs define the operating model that future implementation must follow.

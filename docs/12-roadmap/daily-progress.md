@@ -26,6 +26,29 @@ This file tracks day-by-day execution progress for roadmap phases.
 
 ## Log
 
+## 2026-04-14
+
+- Owner: Worker D
+- Phase: Phase 0 - Operational Readiness
+- Status: in_progress
+- Completed today:
+- Added local startup scripts for API and router worker convenience at the root package level
+- Documented a plain-language local run flow for Redis, `tracking-api`, and `router-worker`
+- Expanded the API env example with the Redis and worker settings needed for local queue startup
+- Added queued-only troubleshooting guidance for the worker when Postgres is not configured
+- Evidence:
+- `package.json`
+- `README.md`
+- `docs/07-ops/runbooks.md`
+- `apps/tracking-api/.env.example`
+- `docs/12-roadmap/daily-progress.md`
+- Test commands:
+- pending verification
+- Blockers:
+- none
+- Next step (next working day):
+- verify the worker config path against the documented local env setup and close the operational readiness doc task
+
 ## 2026-04-13 (update 10)
 
 - Owner: Worker 3
