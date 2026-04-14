@@ -6,6 +6,7 @@ import { PostgresEventRepository } from './repositories/postgres-event-repositor
 import { PostgresEventReadRepository } from './repositories/postgres-event-read-repository.js';
 import { adminEventsRoute } from './routes/admin-events.js';
 import { trackRoute } from './routes/track.js';
+import { createAdminAuthGuard } from './security/admin-auth.js';
 import type { RequestAuthHeaders } from './security/request-auth.js';
 import { verifyRequestAuth } from './security/request-auth.js';
 import { InMemoryRateLimiter } from './security/rate-limit.js';
@@ -49,6 +50,7 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
               },
               security: {
                 authMode: 'off',
+                adminApiToken: undefined,
                 signatureSkewSeconds: 300,
                 rateLimit: {
                   enabled: false,
@@ -71,24 +73,29 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
     return config;
   };
 
-  const eventRepository =
-    options.eventRepository ?? new PostgresEventRepository(getDbPool(resolveConfig().databaseUrl));
+  const appConfig = resolveConfig();
+  const eventRepository = options.eventRepository ?? new PostgresEventRepository(getDbPool(appConfig.databaseUrl));
   const eventReadRepository =
-    options.eventReadRepository ?? new PostgresEventReadRepository(getDbPool(resolveConfig().databaseUrl));
+    options.eventReadRepository ?? new PostgresEventReadRepository(getDbPool(appConfig.databaseUrl));
   const deliveryJobDispatcher =
     options.deliveryJobDispatcher ??
-    (resolveConfig().routerQueue.redis.url || resolveConfig().routerQueue.redis.host
-      ? createBullMqDeliveryJobDispatcher(resolveConfig().routerQueue)
+    (appConfig.routerQueue.redis.url || appConfig.routerQueue.redis.host
+      ? createBullMqDeliveryJobDispatcher(appConfig.routerQueue)
       : new NoopDeliveryJobDispatcher());
   const logger = options.logger ?? app.log;
   const metrics = createIngestionMetrics();
+  const adminAuthGuard = createAdminAuthGuard({
+    token: appConfig.security.adminApiToken,
+    allowOpenWithoutToken: appConfig.nodeEnv === 'development' || appConfig.nodeEnv === 'test',
+    logger: app.log
+  });
   let rateLimiter: InMemoryRateLimiter | null | undefined;
   const getRateLimiter = (): InMemoryRateLimiter | null => {
     if (rateLimiter !== undefined) {
       return rateLimiter;
     }
 
-    const rateLimitConfig = resolveConfig().security.rateLimit;
+    const rateLimitConfig = appConfig.security.rateLimit;
     rateLimiter = rateLimitConfig.enabled
       ? new InMemoryRateLimiter({
           windowMs: rateLimitConfig.windowMs,
@@ -100,7 +107,7 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
   };
 
   const preHandleTrackRequest = async (request: FastifyRequest, reply: FastifyReply): Promise<boolean> => {
-    const securityConfig = resolveConfig().security;
+    const securityConfig = appConfig.security;
 
     if (securityConfig.authMode !== 'off') {
       const payload = (request.body ?? {}) as {
@@ -174,16 +181,20 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
       logger
     })
   );
-  app.register(
-    adminEventsRoute({
-      eventReadRepository
-    })
-  );
+  app.register(async function registerAdminRoutes(adminApp: FastifyInstance): Promise<void> {
+    adminApp.addHook('preHandler', adminAuthGuard);
+    adminApp.register(
+      adminEventsRoute({
+        eventReadRepository,
+        deliveryJobDispatcher
+      })
+    );
+  });
 
   app.get('/health', async () => ({ status: 'ok' }));
   app.get('/ready', async (_request, reply) => {
     try {
-      await getDbPool(resolveConfig().databaseUrl).query('select 1');
+      await getDbPool(appConfig.databaseUrl).query('select 1');
       return { status: 'ready' };
     } catch (error) {
       logger.error({ err: error }, 'readiness probe failed');
@@ -192,7 +203,7 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
   });
 
   app.get('/metrics', async (_request, reply) => {
-    if (!resolveConfig().observability.metricsEnabled) {
+    if (!appConfig.observability.metricsEnabled) {
       return reply.code(404).send({ status: 'error', code: 'disabled' });
     }
 

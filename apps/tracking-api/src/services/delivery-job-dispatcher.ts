@@ -6,7 +6,8 @@ import type { NormalizedTrackEvent } from '../types/track.js';
 export type DeliveryDestination = 'meta' | 'google' | 'tiktok';
 
 const ROUTER_JOB_NAME = 'deliver-event';
-const DEFAULT_DESTINATIONS: readonly DeliveryDestination[] = ['meta', 'google', 'tiktok'];
+export const SUPPORTED_DELIVERY_DESTINATIONS: readonly DeliveryDestination[] = ['meta', 'google', 'tiktok'];
+const DEFAULT_DESTINATIONS: readonly DeliveryDestination[] = SUPPORTED_DELIVERY_DESTINATIONS;
 
 const DEFAULT_JOB_OPTIONS_BY_DESTINATION: Record<DeliveryDestination, JobsOptions> = {
   meta: {
@@ -59,6 +60,11 @@ export type DeliveryJobQueue = Pick<Queue<DeliveryJobPayload>, 'add' | 'close'>;
 
 export interface DeliveryJobDispatcher {
   enqueueDeliveryJob(event: NormalizedTrackEvent): Promise<void>;
+  enqueueDeliveryJobs(input: {
+    eventId: string;
+    destinations: readonly DeliveryDestination[];
+    replayTag?: string;
+  }): Promise<void>;
   close?(): Promise<void>;
 }
 
@@ -115,16 +121,21 @@ class BullMqDeliveryJobDispatcher implements DeliveryJobDispatcher {
     private readonly destinations: readonly DeliveryDestination[]
   ) {}
 
-  async enqueueDeliveryJob(event: NormalizedTrackEvent): Promise<void> {
+  async enqueueDeliveryJobs(input: {
+    eventId: string;
+    destinations: readonly DeliveryDestination[];
+    replayTag?: string;
+  }): Promise<void> {
     const requestedAt = new Date().toISOString();
+    const jobIdSuffix = input.replayTag ? `:replay:${input.replayTag}` : '';
 
     await Promise.all(
-      this.destinations.map(async (destination) => {
-        const jobId = `${event.eventId}:${destination}`;
+      input.destinations.map(async (destination) => {
+        const jobId = `${input.eventId}:${destination}${jobIdSuffix}`;
         await this.queue.add(
           ROUTER_JOB_NAME,
           {
-            eventId: event.eventId,
+            eventId: input.eventId,
             destination,
             requestedAt,
             payloadVersion: 1
@@ -138,6 +149,13 @@ class BullMqDeliveryJobDispatcher implements DeliveryJobDispatcher {
     );
   }
 
+  async enqueueDeliveryJob(event: NormalizedTrackEvent): Promise<void> {
+    await this.enqueueDeliveryJobs({
+      eventId: event.eventId,
+      destinations: this.destinations
+    });
+  }
+
   async close(): Promise<void> {
     await this.queue.close();
   }
@@ -145,6 +163,10 @@ class BullMqDeliveryJobDispatcher implements DeliveryJobDispatcher {
 
 export class NoopDeliveryJobDispatcher implements DeliveryJobDispatcher {
   async enqueueDeliveryJob(): Promise<void> {
+    return;
+  }
+
+  async enqueueDeliveryJobs(): Promise<void> {
     return;
   }
 

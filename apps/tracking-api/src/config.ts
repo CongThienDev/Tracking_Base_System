@@ -15,6 +15,7 @@ export type AppConfig = {
   security: {
     authMode: 'off' | 'shared-secret' | 'signing';
     authSecret?: string;
+    adminApiToken?: string;
     signatureSkewSeconds: number;
     rateLimit: {
       enabled: boolean;
@@ -61,6 +62,10 @@ function parseRequiredAuthMode(value: string | undefined): 'off' | 'shared-secre
   throw new Error(`TRACKING_API_AUTH_MODE must be one of: off, shared-secret, signing`);
 }
 
+function isDevLikeEnvironment(nodeEnv: string): boolean {
+  return nodeEnv === 'development' || nodeEnv === 'test';
+}
+
 function parseOptionalPositiveInteger(value: string | undefined, fieldName: string): number | undefined {
   if (!value) {
     return undefined;
@@ -102,13 +107,19 @@ export function getConfig(): AppConfig {
 
   const authMode = parseRequiredAuthMode(process.env.TRACKING_API_AUTH_MODE);
   const authSecret = process.env.TRACKING_API_SECRET?.trim() || undefined;
+  const nodeEnv = process.env.NODE_ENV ?? 'development';
+  const adminApiToken = process.env.ADMIN_API_TOKEN?.trim() || undefined;
 
   if (authMode !== 'off' && !authSecret) {
     throw new Error('TRACKING_API_SECRET is required when TRACKING_API_AUTH_MODE is enabled');
   }
 
+  if (!adminApiToken && !isDevLikeEnvironment(nodeEnv)) {
+    throw new Error('ADMIN_API_TOKEN is required outside development/test');
+  }
+
   return {
-    nodeEnv: process.env.NODE_ENV ?? 'development',
+    nodeEnv,
     port,
     databaseUrl,
     observability: {
@@ -117,6 +128,7 @@ export function getConfig(): AppConfig {
     security: {
       authMode,
       authSecret,
+      adminApiToken,
       signatureSkewSeconds: parseOptionalPositiveInteger(process.env.TRACKING_SIGNATURE_SKEW_SECONDS, 'TRACKING_SIGNATURE_SKEW_SECONDS') ?? 300,
       rateLimit: {
         enabled: parseBoolean(process.env.TRACKING_RATE_LIMIT_ENABLED, false),
