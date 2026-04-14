@@ -4,3 +4,8 @@ node_modules
 dist
 coverage
 *.log
+.DS_Store
+**/.DS_Store
+*.tsbuildinfo
+.vite
+/docs/13-prompts
