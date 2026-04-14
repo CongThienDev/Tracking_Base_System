@@ -1,5 +1,9 @@
 # Runbooks
 
+Quick start for queue/worker go-live:
+
+- [Queue Worker Go-Live Checklist](queue-worker-go-live-checklist.md)
+
 ## Common incidents
 
 ### Vendor outage
