@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tracking Base System - Cách hệ thống hoạt động</title>
+    <style>
+      :root {
+        --bg: #f5f2eb;
+        --ink: #1f1b16;
+        --muted: #645c52;
+        --card: #fffdf8;
+        --line: #ddd3c3;
+        --accent: #0e7c7b;
+        --accent-soft: #d8f0ef;
+        --ok: #1f9d55;
+        --warn: #b7791f;
+        --danger: #b83232;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Space Grotesk", "IBM Plex Sans", "Avenir Next", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 15% 10%, #fff8d4 0%, transparent 35%),
+          radial-gradient(circle at 82% 5%, #cdeff2 0%, transparent 30%),
+          var(--bg);
+      }
+
+      .page {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 28px 20px 48px;
+      }
+
+      .hero {
+        background: linear-gradient(125deg, #101521 0%, #1a2a43 100%);
+        color: #f8fbff;
+        border-radius: 18px;
+        padding: 28px;
+        box-shadow: 0 14px 40px rgba(16, 21, 33, 0.22);
+      }
+
+      .eyebrow {
+        margin: 0;
+        letter-spacing: 0.08em;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #9cc3ff;
+      }
+
+      h1 {
+        margin: 10px 0 8px;
+        font-size: clamp(1.6rem, 2.4vw, 2.4rem);
+      }
+
+      .hero p {
+        margin: 0;
+        color: #d5e6ff;
+        line-height: 1.5;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .grid.two {
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 18px;
+      }
+
+      h2 {
+        margin: 0 0 12px;
+        font-size: 1.15rem;
+      }
+
+      h3 {
+        margin: 0 0 8px;
+        font-size: 1rem;
+      }
+
+      p,
+      li {
+        line-height: 1.55;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+
+      .tag {
+        display: inline-block;
+        margin: 0 6px 8px 0;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        background: var(--accent-soft);
+        color: #0b5f5f;
+      }
+
+      .flow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .step {
+        background: #ffffff;
+        border: 1px solid #d5c8b2;
+        border-radius: 10px;
+        padding: 10px 12px;
+        min-width: 160px;
+      }
+
+      .step span {
+        display: block;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+
+      .arrow {
+        font-weight: 700;
+        color: #6f6559;
+      }
+
+      .status {
+        display: grid;
+        gap: 8px;
+      }
+
+      .status li {
+        list-style: none;
+        margin: 0;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+      }
+
+      .done {
+        border-left: 6px solid var(--ok);
+        background: #eefaf3;
+      }
+
+      .todo {
+        border-left: 6px solid var(--warn);
+        background: #fff8e8;
+      }
+
+      .next {
+        border-left: 6px solid var(--danger);
+        background: #fff1f1;
+      }
+
+      code {
+        font-family: "JetBrains Mono", "IBM Plex Mono", "SF Mono", monospace;
+        background: #f0e7d8;
+        padding: 1px 5px;
+        border-radius: 6px;
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      .footer {
+        margin-top: 16px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">Tracking Base System</p>
+        <h1>Trang này giúp bạn hiểu hệ thống build để làm gì</h1>
+        <p>
+          Đây không phải website bán hàng hay dashboard BI. Đây là tầng hạ tầng tracking: nhận event từ app khác,
+          lưu event chuẩn làm nguồn sự thật, rồi đẩy sang Meta/Google/TikTok theo cơ chế retry an toàn.
+        </p>
+      </section>
+
+      <section class="grid two">
+        <article class="card">
+          <h2>Mục tiêu chính</h2>
+          <p>
+            Một hành động thực tế của người dùng chỉ tạo ra <code>1 event_id</code>, được lưu chuẩn 1 lần,
+            và được fan-out xuống nhiều nền tảng mà không bị đếm trùng.
+          </p>
+          <div>
+            <span class="tag">Dedup trước side effect</span>
+            <span class="tag">Store-before-send</span>
+            <span class="tag">Retry + trạng thái delivery</span>
+            <span class="tag">Cutover an toàn</span>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>Hệ thống này KHÔNG làm gì</h2>
+          <ul>
+            <li>Không thay thế frontend app/product website.</li>
+            <li>Không phải dashboard báo cáo trực tiếp cho người dùng cuối.</li>
+            <li>Không phải nơi nhập tay dữ liệu marketing.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="card" style="margin-top: 16px">
+        <h2>Luồng hoạt động end-to-end</h2>
+        <div class="flow">
+          <div class="step"><strong>1) Client App</strong><span>Browser / Backend gửi event</span></div>
+          <div class="arrow">→</div>
+          <div class="step"><strong>2) Tracking API</strong><span><code>POST /track</code> validate + enrich</span></div>
+          <div class="arrow">→</div>
+          <div class="step"><strong>3) Postgres</strong><span>Lưu canonical event + dedup bằng <code>event_id</code></span></div>
+          <div class="arrow">→</div>
+          <div class="step"><strong>4) Queue</strong><span>BullMQ + Redis tạo job gửi destination</span></div>
+          <div class="arrow">→</div>
+          <div class="step"><strong>5) Router Worker</strong><span>Map payload, retry, ghi trạng thái</span></div>
+          <div class="arrow">→</div>
+          <div class="step"><strong>6) Meta/Google/TikTok</strong><span>Nhận conversion ổn định</span></div>
+        </div>
+      </section>
+
+      <section class="grid two" style="margin-top: 16px">
+        <article class="card">
+          <h2>Phase 7 hiện còn gì?</h2>
+          <ul class="status">
+            <li class="done"><strong>Đã xong:</strong> kickoff, baseline docs, UAT matrix.</li>
+            <li class="todo"><strong>Còn thiếu:</strong> chạy canary window và thu monitor evidence.</li>
+            <li class="todo"><strong>Còn thiếu:</strong> parity report thật từ dữ liệu canary vs baseline và sign-off.</li>
+            <li class="todo"><strong>Còn thiếu:</strong> rollback rehearsal có bằng chứng vận hành.</li>
+            <li class="next"><strong>Cuối cùng:</strong> ghi quyết định go/no-go và chuyển Phase 7 sang <code>done</code>.</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <h2>Xem thêm</h2>
+          <ul>
+            <li><a href="../12-roadmap/phases-dashboard.html">Roadmap dashboard (interactive)</a></li>
+            <li><a href="../12-roadmap/implementation-phases.md">Phase definition + gate checklist</a></li>
+            <li><a href="../12-roadmap/backlog.md">Near-term backlog</a></li>
+            <li><a href="system-summary.md">System summary</a></li>
+          </ul>
+          <p style="margin-top: 10px">
+            Nếu cần chạy local để xem API hoạt động: <code>npm run dev</code>, endpoint chính là <code>POST /track</code>.
+          </p>
+        </article>
+      </section>
+
+      <p class="footer">
+        Gợi ý: mở file này trực tiếp trên browser hoặc mở `docs/12-roadmap/phases-dashboard.html` để xem phase theo card.
+      </p>
+    </main>
+  </body>
+</html>

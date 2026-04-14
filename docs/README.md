@@ -7,7 +7,7 @@ The layout is designed so humans and coding agents can navigate the repository w
 ## Recommended reading order
 
 1. [Start here](00-start-here/README.md)
-2. [System summary](00-start-here/system-summary.md)
+2. [Visual walkthrough (what this system is built for)](00-start-here/how-this-system-works.html)
 3. [Requirements](01-product/requirements.md)
 4. [Architecture overview](02-architecture/architecture-overview.md)
 5. [Canonical event contract](03-data/event-contract.md)
@@ -42,6 +42,7 @@ The layout is designed so humans and coding agents can navigate the repository w
 - [`04-api/`](04-api/tracking-api.md): API and worker contracts
 - [`05-integrations/`](05-integrations/meta-capi.md): downstream delivery specs
 - [`06-frontend/`](06-frontend/tracking-sdk.md): browser and backend client integration
+- [`06-frontend/frontend-layout-architecture.md`](06-frontend/frontend-layout-architecture.md): canonical frontend layering rules
 - [`07-ops/`](07-ops/deployment.md): deployment and operations
 - [`08-security/`](08-security/privacy-and-gdpr.md): privacy and security controls
 - [`09-testing/`](09-testing/test-strategy.md): quality gates

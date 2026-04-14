@@ -28,6 +28,16 @@ Core principle:
 - [Tracking API contract](docs/04-api/tracking-api.md)
 - [AGENT guide](AGENT.md)
 
+## Frontend console
+
+This repo now includes an operational frontend app:
+
+- Workspace: `apps/tracking-console`
+- Start frontend: `npm run dev:console`
+- Build frontend: `npm run build:console`
+- Default frontend URL: `http://localhost:4173`
+- API target in local dev: proxied from `/api/*` to `http://localhost:3000`
+
 ## Repository intent
 
 This repository is documentation-first. The docs define the operating model that future implementation must follow.
