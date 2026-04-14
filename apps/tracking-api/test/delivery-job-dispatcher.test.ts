@@ -96,7 +96,7 @@ describe('delivery-job-dispatcher', () => {
       });
       expect(call[2]).toMatchObject({
         ...getDeliveryJobOptions(destination),
-        jobId: `evt-123:${destination}`
+        jobId: `evt-123__${destination}`
       });
     }
   });

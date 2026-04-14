@@ -121,17 +121,23 @@ class BullMqDeliveryJobDispatcher implements DeliveryJobDispatcher {
     private readonly destinations: readonly DeliveryDestination[]
   ) {}
 
+  private buildJobId(eventId: string, destination: DeliveryDestination, replayTag?: string): string {
+    const eventPart = encodeURIComponent(eventId);
+    const destinationPart = encodeURIComponent(destination);
+    const replayPart = replayTag ? `__replay__${encodeURIComponent(replayTag)}` : '';
+    return `${eventPart}__${destinationPart}${replayPart}`;
+  }
+
   async enqueueDeliveryJobs(input: {
     eventId: string;
     destinations: readonly DeliveryDestination[];
     replayTag?: string;
   }): Promise<void> {
     const requestedAt = new Date().toISOString();
-    const jobIdSuffix = input.replayTag ? `:replay:${input.replayTag}` : '';
 
     await Promise.all(
       input.destinations.map(async (destination) => {
-        const jobId = `${input.eventId}:${destination}${jobIdSuffix}`;
+        const jobId = this.buildJobId(input.eventId, destination, input.replayTag);
         await this.queue.add(
           ROUTER_JOB_NAME,
           {
