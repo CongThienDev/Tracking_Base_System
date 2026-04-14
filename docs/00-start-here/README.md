@@ -9,6 +9,7 @@ Read these files first if you are new to the system:
 3. [Requirements](../01-product/requirements.md)
 4. [Architecture overview](../02-architecture/architecture-overview.md)
 5. [Canonical event contract](../03-data/event-contract.md)
+6. [How this system works (visual page)](how-this-system-works.html)
 
 ## What this system is
 
