@@ -3,6 +3,8 @@ import { getConfig, type AppConfig } from './config.js';
 import { getDbPool } from './db/client.js';
 import { createIngestionMetrics } from './observability/ingestion-metrics.js';
 import { PostgresEventRepository } from './repositories/postgres-event-repository.js';
+import { PostgresEventReadRepository } from './repositories/postgres-event-read-repository.js';
+import { adminEventsRoute } from './routes/admin-events.js';
 import { trackRoute } from './routes/track.js';
 import type { RequestAuthHeaders } from './security/request-auth.js';
 import { verifyRequestAuth } from './security/request-auth.js';
@@ -12,10 +14,12 @@ import {
   NoopDeliveryJobDispatcher,
   type DeliveryJobDispatcher
 } from './services/delivery-job-dispatcher.js';
+import type { EventReadRepository } from './types/admin-events.js';
 import type { EventRepository } from './types/track.js';
 
 type BuildAppOptions = {
   eventRepository?: EventRepository;
+  eventReadRepository?: EventReadRepository;
   deliveryJobDispatcher?: DeliveryJobDispatcher;
   logger?: Pick<FastifyBaseLogger, 'error'>;
   config?: AppConfig;
@@ -69,6 +73,8 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
 
   const eventRepository =
     options.eventRepository ?? new PostgresEventRepository(getDbPool(resolveConfig().databaseUrl));
+  const eventReadRepository =
+    options.eventReadRepository ?? new PostgresEventReadRepository(getDbPool(resolveConfig().databaseUrl));
   const deliveryJobDispatcher =
     options.deliveryJobDispatcher ??
     (resolveConfig().routerQueue.redis.url || resolveConfig().routerQueue.redis.host
@@ -166,6 +172,11 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
       preHandle: preHandleTrackRequest,
       metrics,
       logger
+    })
+  );
+  app.register(
+    adminEventsRoute({
+      eventReadRepository
     })
   );
 
