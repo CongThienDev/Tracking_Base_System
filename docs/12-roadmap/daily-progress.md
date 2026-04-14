@@ -399,3 +399,61 @@ This file tracks day-by-day execution progress for roadmap phases.
 - production canary window has not been executed yet, so parity sign-off and rollback drill evidence are still pending
 - Next step (next working day):
 - execute canary window with real traffic aggregates, publish production parity report, run rollback rehearsal, then capture final go/no-go decision
+
+## 2026-04-14 (update 01)
+
+- Owner: team
+- Phase: Phase 7 - UAT and Cutover
+- Status: in_progress
+- Completed today:
+- Built and integrated `tracking-console` frontend workspace for operational visibility and event debugging
+- Added Events tab with DB-backed latest-event listing and delivery state mapping (`queued/success/failed`)
+- Implemented Admin API endpoint `GET /admin/events` with paging and filters (`event_name`, `source`, `delivery_status`)
+- Added API and frontend coverage updates for new admin events workflow and validated build/typecheck/test gates
+- Created branch `thiendev_14/4` and split delivered scope into 22 granular commits for reviewability
+- Evidence:
+- `apps/tracking-console/`
+- `apps/tracking-api/src/routes/admin-events.ts`
+- `apps/tracking-api/src/repositories/postgres-event-read-repository.ts`
+- `apps/tracking-api/test/admin-events-route.test.ts`
+- `docs/04-api/admin-api.md`
+- `npm run -w @tracking-base/tracking-api build` -> pass
+- `TEST_DATABASE_URL= npm run -w @tracking-base/tracking-api test` -> pass
+- `npm run -w @tracking-base/tracking-console typecheck` -> pass
+- `npm run -w @tracking-base/tracking-console build` -> pass
+- Blockers:
+- Delivery rows remain mostly `queued` until queue/worker path is active with destination dispatch; canary execution evidence still pending
+- Next step (next working day):
+- run canary window with worker path enabled, capture delivery status movement and parity evidence, then proceed rollback rehearsal and final go/no-go capture
+
+## 2026-04-14 (update 02)
+
+- Owner: team
+- Phase: Phase 7 - UAT and Cutover
+- Status: in_progress
+- Completed today:
+- Executed `docs/07-ops/queue-worker-go-live-checklist.md` end-to-end in local run order: Redis -> API -> Worker -> Console
+- Fixed queue enqueue blocker with minimal patch: BullMQ custom `jobId` no longer contains `:` (root cause of events stuck at `queued`)
+- Completed smoke verification for `/health` and `/ready` with `{"status":"ok"}` and `{"status":"ready"}`
+- Sent test event and verified state progression from `queued` to `failed` via worker retries when Google endpoint was intentionally unavailable
+- Executed replay for failed destination and verified final state moved to `success` after bringing up a local mock Google endpoint
+- Evidence:
+- `apps/tracking-api/src/services/delivery-job-dispatcher.ts` (jobId sanitizer for BullMQ compatibility)
+- `apps/tracking-api/.env` (`REDIS_URL=redis://127.0.0.1:6379/0`)
+- `apps/router-worker/.env` (worker env completion for `DATABASE_URL`, `REDIS_URL`, `ROUTER_QUEUE_NAME`, `ROUTER_WORKER_CONCURRENCY`)
+- `redis-cli -h 127.0.0.1 -p 6379 ping` -> `PONG`
+- `curl http://127.0.0.1:3000/health` -> `{"status":"ok"}`
+- `curl http://127.0.0.1:3000/ready` -> `{"status":"ready"}`
+- `POST /track` for `evt-e2e-fail-1776156544` -> accepted (`status: ok`)
+- `GET /admin/events?limit=5&offset=0` -> event appears in list (Events tab data source)
+- `GET /admin/events/evt-e2e-fail-1776156544` timeline:
+- initial: `deliveryOverallStatus="queued"` with `google=retrying`
+- after retries: `deliveryOverallStatus="failed"` with `google=failed`
+- `POST /admin/events/evt-e2e-fail-1776156544/replay` -> `replayedDestinations=["google"]`
+- `GET /admin/events/evt-e2e-fail-1776156544` after replay -> all destinations `delivered`, `deliveryOverallStatus="success"`
+- Worker log evidence: retry/fail then replay success for job ids `evt-e2e-fail-1776156544__google` and replay-tagged `...__replay__...`
+- Mock endpoint evidence: received replay payload at `POST /google` with same canonical `event_id`
+- Blockers:
+- none for local queue/worker smoke path; end-to-end status transitions and replay were validated
+- Next step (next working day):
+- investigate why one legacy event remained `queued` (created before jobId fix), then add a short operator note in ops docs for replaying historical stuck events after queue config bugs are fixed
