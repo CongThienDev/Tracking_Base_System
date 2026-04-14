@@ -13,6 +13,7 @@ export const appRouter = createBrowserRouter([
     children: [
       { index: true, element: <OverviewPage /> },
       { path: 'events', element: <EventsPage /> },
+      { path: 'events/:eventId', element: <EventsPage /> },
       { path: 'debugger', element: <DebuggerPage /> },
       { path: 'flow', element: <FlowPage /> },
       { path: 'phase-7', element: <Phase7Page /> }
