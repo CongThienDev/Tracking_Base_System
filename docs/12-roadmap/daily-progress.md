@@ -425,3 +425,35 @@ This file tracks day-by-day execution progress for roadmap phases.
 - Delivery rows remain mostly `queued` until queue/worker path is active with destination dispatch; canary execution evidence still pending
 - Next step (next working day):
 - run canary window with worker path enabled, capture delivery status movement and parity evidence, then proceed rollback rehearsal and final go/no-go capture
+
+## 2026-04-14 (update 02)
+
+- Owner: team
+- Phase: Phase 7 - UAT and Cutover
+- Status: in_progress
+- Completed today:
+- Executed `docs/07-ops/queue-worker-go-live-checklist.md` end-to-end in local run order: Redis -> API -> Worker -> Console
+- Fixed queue enqueue blocker with minimal patch: BullMQ custom `jobId` no longer contains `:` (root cause of events stuck at `queued`)
+- Completed smoke verification for `/health` and `/ready` with `{"status":"ok"}` and `{"status":"ready"}`
+- Sent test event and verified state progression from `queued` to `failed` via worker retries when Google endpoint was intentionally unavailable
+- Executed replay for failed destination and verified final state moved to `success` after bringing up a local mock Google endpoint
+- Evidence:
+- `apps/tracking-api/src/services/delivery-job-dispatcher.ts` (jobId sanitizer for BullMQ compatibility)
+- `apps/tracking-api/.env` (`REDIS_URL=redis://127.0.0.1:6379/0`)
+- `apps/router-worker/.env` (worker env completion for `DATABASE_URL`, `REDIS_URL`, `ROUTER_QUEUE_NAME`, `ROUTER_WORKER_CONCURRENCY`)
+- `redis-cli -h 127.0.0.1 -p 6379 ping` -> `PONG`
+- `curl http://127.0.0.1:3000/health` -> `{"status":"ok"}`
+- `curl http://127.0.0.1:3000/ready` -> `{"status":"ready"}`
+- `POST /track` for `evt-e2e-fail-1776156544` -> accepted (`status: ok`)
+- `GET /admin/events?limit=5&offset=0` -> event appears in list (Events tab data source)
+- `GET /admin/events/evt-e2e-fail-1776156544` timeline:
+- initial: `deliveryOverallStatus="queued"` with `google=retrying`
+- after retries: `deliveryOverallStatus="failed"` with `google=failed`
+- `POST /admin/events/evt-e2e-fail-1776156544/replay` -> `replayedDestinations=["google"]`
+- `GET /admin/events/evt-e2e-fail-1776156544` after replay -> all destinations `delivered`, `deliveryOverallStatus="success"`
+- Worker log evidence: retry/fail then replay success for job ids `evt-e2e-fail-1776156544__google` and replay-tagged `...__replay__...`
+- Mock endpoint evidence: received replay payload at `POST /google` with same canonical `event_id`
+- Blockers:
+- none for local queue/worker smoke path; end-to-end status transitions and replay were validated
+- Next step (next working day):
+- investigate why one legacy event remained `queued` (created before jobId fix), then add a short operator note in ops docs for replaying historical stuck events after queue config bugs are fixed

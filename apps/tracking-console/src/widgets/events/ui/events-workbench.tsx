@@ -177,7 +177,8 @@ export function EventsWorkbench() {
   const detailQuery = useQuery({
     queryKey: ['admin-event-detail', selectedEventId],
     queryFn: () => trackingApi.getEventDetail(selectedEventId ?? ''),
-    enabled: Boolean(selectedEventId)
+    enabled: Boolean(selectedEventId),
+    refetchInterval: selectedEventId ? 5_000 : false
   });
 
   const detail = detailQuery.data?.item;
