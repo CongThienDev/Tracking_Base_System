@@ -376,3 +376,29 @@ This file tracks day-by-day execution progress for roadmap phases.
 - production canary window has not been executed yet, so parity sign-off and rollback drill evidence are still pending
 - Next step (next working day):
 - execute canary window with real traffic aggregates, publish production parity report, run rollback rehearsal, then capture final go/no-go decision
+
+## 2026-04-14 (update 01)
+
+- Owner: team
+- Phase: Phase 7 - UAT and Cutover
+- Status: in_progress
+- Completed today:
+- Built and integrated `tracking-console` frontend workspace for operational visibility and event debugging
+- Added Events tab with DB-backed latest-event listing and delivery state mapping (`queued/success/failed`)
+- Implemented Admin API endpoint `GET /admin/events` with paging and filters (`event_name`, `source`, `delivery_status`)
+- Added API and frontend coverage updates for new admin events workflow and validated build/typecheck/test gates
+- Created branch `thiendev_14/4` and split delivered scope into 22 granular commits for reviewability
+- Evidence:
+- `apps/tracking-console/`
+- `apps/tracking-api/src/routes/admin-events.ts`
+- `apps/tracking-api/src/repositories/postgres-event-read-repository.ts`
+- `apps/tracking-api/test/admin-events-route.test.ts`
+- `docs/04-api/admin-api.md`
+- `npm run -w @tracking-base/tracking-api build` -> pass
+- `TEST_DATABASE_URL= npm run -w @tracking-base/tracking-api test` -> pass
+- `npm run -w @tracking-base/tracking-console typecheck` -> pass
+- `npm run -w @tracking-base/tracking-console build` -> pass
+- Blockers:
+- Delivery rows remain mostly `queued` until queue/worker path is active with destination dispatch; canary execution evidence still pending
+- Next step (next working day):
+- run canary window with worker path enabled, capture delivery status movement and parity evidence, then proceed rollback rehearsal and final go/no-go capture
