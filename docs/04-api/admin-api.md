@@ -4,11 +4,17 @@
 
 Non-public operational endpoints for inspection and recovery.
 
-## Implemented endpoint
+## Endpoints
 
-- `GET /admin/events?limit=20&offset=0&event_name=purchase&source=meta&delivery_status=queued`
+### `GET /admin/events`
 
-### Response shape
+Returns a paginated list of tracked events.
+
+Example:
+
+`GET /admin/events?limit=20&offset=0&event_name=purchase&source=meta&delivery_status=queued&from=2026-04-13T00:00:00.000Z&to=2026-04-14T00:00:00.000Z&destination=google&event_id=evt_123&event_id_like=evt_&sort_by=created_at&sort_order=desc`
+
+Response shape:
 
 ```json
 {
@@ -45,25 +51,135 @@ Non-public operational endpoints for inspection and recovery.
 }
 ```
 
+Supported filters:
+
+- `event_name`: case-insensitive partial match
+- `source`: case-insensitive match
+- `delivery_status`: one of `queued`, `success`, `failed`
+- `from` / `to`: inclusive `createdAt` range filter
+- `destination`: exact destination filter
+- `event_id`: exact event id filter
+- `event_id_like`: case-insensitive partial event id search
+- `sort_by`: one of `created_at`, `event_timestamp`, `event_name`
+- `sort_order`: one of `asc`, `desc`
+
 Delivery status mapping for operator UI:
 
 - `queued`: no delivery rows yet, or still retrying/pending
 - `success`: all known delivery rows are `delivered`
 - `failed`: at least one delivery row is `failed`
 
-Supported filters:
+### `GET /admin/events/:event_id`
 
-- `event_name`: case-insensitive partial match (`ILIKE`)
-- `source`: case-insensitive exact match
-- `delivery_status`: one of `queued`, `success`, `failed`
+Returns the full canonical event record and every delivery row.
 
-## Candidate endpoints
+Response shape:
 
-- `GET /health`
-- `GET /events/:event_id`
-- `POST /events/:event_id/replay`
-- `DELETE /users/:user_id/events`
-- `GET /deliveries?status=failed`
+```json
+{
+  "status": "ok",
+  "event": {
+    "eventId": "evt_123",
+    "eventName": "purchase",
+    "eventTimestamp": "2026-04-14T10:00:00.000Z",
+    "sessionId": "sess_123",
+    "source": "meta",
+    "campaign": "spring_sale",
+    "routeStatus": "pending",
+    "eventValue": 49.99,
+    "currency": "USD",
+    "createdAt": "2026-04-14T10:00:01.000Z",
+    "updatedAt": "2026-04-14T10:00:02.000Z",
+    "userId": "user_123",
+    "emailHash": "hash_123",
+    "anonymousId": "anon_123",
+    "adId": null,
+    "gclid": null,
+    "ttclid": null,
+    "customerType": "consumer",
+    "payload": {
+      "value": 49.99,
+      "currency": "USD"
+    },
+    "ingestIp": "203.0.113.10",
+    "userAgent": "Mozilla/5.0",
+    "deliveryOverallStatus": "failed",
+    "deliveries": [
+      {
+        "destination": "meta",
+        "status": "failed",
+        "attemptCount": 2,
+        "updatedAt": "2026-04-14T10:00:06.000Z",
+        "lastErrorCode": "timeout",
+        "lastErrorMessage": "request timed out",
+        "lastResponseSummary": {
+          "worker": "router-worker-1"
+        },
+        "nextAttemptAt": "2026-04-14T10:01:06.000Z",
+        "deliveredAt": null,
+        "createdAt": "2026-04-14T10:00:03.000Z"
+      }
+    ]
+  }
+}
+```
+
+### `POST /admin/events/:event_id/replay`
+
+Re-enqueues delivery jobs for the failed rows by default, or for the explicitly selected destination list.
+
+Request body:
+
+```json
+{
+  "destinations": ["meta", "google"]
+}
+```
+
+If `destinations` is omitted, the API replays only failed delivery rows. Supported destination names are `meta`, `google`, and `tiktok`.
+
+Response shape:
+
+```json
+{
+  "status": "ok",
+  "event": {
+    "eventId": "evt_123",
+    "eventName": "purchase",
+    "eventTimestamp": "2026-04-14T10:00:00.000Z",
+    "sessionId": "sess_123",
+    "source": "meta",
+    "campaign": "spring_sale",
+    "routeStatus": "pending",
+    "eventValue": 49.99,
+    "currency": "USD",
+    "createdAt": "2026-04-14T10:00:01.000Z",
+    "updatedAt": "2026-04-14T10:00:02.000Z",
+    "userId": "user_123",
+    "emailHash": "hash_123",
+    "anonymousId": "anon_123",
+    "adId": null,
+    "gclid": null,
+    "ttclid": null,
+    "customerType": "consumer",
+    "payload": {
+      "value": 49.99,
+      "currency": "USD"
+    },
+    "ingestIp": "203.0.113.10",
+    "userAgent": "Mozilla/5.0",
+    "deliveryOverallStatus": "failed",
+    "deliveries": []
+  },
+  "replayedDestinations": ["meta"]
+}
+```
+
+Replay behavior:
+
+- delivery rows are moved to `retrying` before enqueue
+- a repeated call does not re-enqueue rows that were already switched to `retrying`
+- queue job ids are replay-tagged so replay jobs do not collide with the original delivery jobs
 
 ## Constraints
 

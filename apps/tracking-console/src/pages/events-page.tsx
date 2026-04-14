@@ -1,9 +1,9 @@
-import { RecentEventsPanel } from '../widgets/events/ui/recent-events-panel';
+import { EventsWorkbench } from '../widgets/events/ui/events-workbench';
 
 export function EventsPage() {
   return (
     <div className="page-grid">
-      <RecentEventsPanel />
+      <EventsWorkbench />
     </div>
   );
 }

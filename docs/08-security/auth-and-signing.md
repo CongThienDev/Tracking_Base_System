@@ -18,9 +18,17 @@ Define trust boundaries for other repositories and services that call this track
 - rely on origin controls and abuse protection
 - do not embed long-lived privileged secrets in browser code
 
+### Internal admin UI
+
+- use a simple token header for `/admin/*` requests
+- store the token locally in the browser only if the operator chooses to
+- do not send the token with `/track`
+
 ## Recommended stance
 
 Use stronger authentication for server-to-server senders and lighter trust controls plus rate limits for browser-originated traffic.
+
+For operator-only admin access, keep the token configurable through `ADMIN_API_TOKEN`. If that variable is unset in development or test, the admin API may be left open for local debugging, but that relaxed mode should be treated as temporary and visible in documentation and UI.
 
 ## Header and signature policy
 
