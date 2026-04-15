@@ -22,6 +22,8 @@
     "preview:console": "npm run -w @tracking-base/tracking-console preview",
     "test": "npm run -w @tracking-base/tracking-api test",
     "test:shared-contracts": "npm run -w @tracking-base/shared-contracts test",
+    "env:sync": "node scripts/env-sync.mjs sync",
+    "env:check": "node scripts/env-sync.mjs check",
     "migrate": "npm run -w @tracking-base/tracking-api migrate",
     "validate:delete-by-user": "npm run -w @tracking-base/tracking-api validate:delete-by-user",
     "parity:check": "npm run -w @tracking-base/tracking-api parity:check --",

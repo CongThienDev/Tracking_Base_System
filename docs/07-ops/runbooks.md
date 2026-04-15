@@ -66,9 +66,19 @@ Use this when you want to run the queue path locally end to end.
 
 ### Environment layout
 
-- `apps/tracking-api/.env` is loaded when you run the API workspace script
-- `apps/router-worker/.env` is loaded when you run the worker workspace script
-- the two apps do not read a shared repo-root `.env` file by default, so copy the values into each workspace that needs them
+- Shared source of truth: `env/.env.shared` (copy from `env/.env.shared.example`)
+- Generate all runtime/deploy env files with:
+
+```bash
+npm run env:check
+npm run env:sync
+```
+
+- Generated files:
+  - `apps/tracking-api/.env`
+  - `apps/router-worker/.env`
+  - `deploy/app/.env`
+  - `deploy/infra/.env`
 
 Recommended minimum values:
 

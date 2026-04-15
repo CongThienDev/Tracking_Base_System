@@ -54,7 +54,20 @@ npm run dev:worker
 npm run dev:stack
 ```
 
-The API and worker each load dotenv from their own workspace directory. Put the API values in `apps/tracking-api/.env`, and put the worker values in `apps/router-worker/.env` if you are not exporting them in your shell.
+The API and worker each load dotenv from their own workspace directory. This repo now supports a shared source file and generated per-workspace env files:
+
+```bash
+cp env/.env.shared.example env/.env.shared
+npm run env:check
+npm run env:sync
+```
+
+`npm run env:sync` generates:
+
+- `apps/tracking-api/.env`
+- `apps/router-worker/.env`
+- `deploy/app/.env`
+- `deploy/infra/.env`
 
 Minimum local queue settings:
 
