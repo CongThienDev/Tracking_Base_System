@@ -9,3 +9,5 @@ coverage
 *.tsbuildinfo
 .vite
 /docs/13-prompts
+.DS_Store
+fe-prank/
