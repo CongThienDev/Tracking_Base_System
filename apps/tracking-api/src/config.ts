@@ -9,6 +9,9 @@ export type AppConfig = {
   nodeEnv: string;
   port: number;
   databaseUrl: string;
+  cors: {
+    allowOrigins: string[];
+  };
   observability: {
     metricsEnabled: boolean;
   };
@@ -122,6 +125,12 @@ export function getConfig(): AppConfig {
     nodeEnv,
     port,
     databaseUrl,
+    cors: {
+      allowOrigins: (process.env.TRACKING_CORS_ALLOW_ORIGINS ?? '')
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean)
+    },
     observability: {
       metricsEnabled: parseBoolean(process.env.METRICS_ENABLED, true)
     },

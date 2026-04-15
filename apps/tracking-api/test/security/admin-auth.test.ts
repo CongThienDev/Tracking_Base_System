@@ -8,6 +8,9 @@ function buildTestConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     nodeEnv: 'development',
     port: 0,
     databaseUrl: 'postgres://unused',
+    cors: {
+      allowOrigins: []
+    },
     observability: {
       metricsEnabled: true
     },
