@@ -2,7 +2,7 @@ name: tracking-base-app
 
 services:
   tracking-api:
-    image: ${TRACKING_API_IMAGE:-ghcr.io/your-org/your-repo/tracking-api:latest}
+    image: ${TRACKING_API_IMAGE:-ghcr.io/congthiendev/tracking_base_system/tracking-api:latest}
     container_name: tracking-api
     restart: unless-stopped
     env_file:
@@ -22,7 +22,7 @@ services:
       - tracking-base-net
 
   router-worker:
-    image: ${ROUTER_WORKER_IMAGE:-ghcr.io/your-org/your-repo/router-worker:latest}
+    image: ${ROUTER_WORKER_IMAGE:-ghcr.io/congthiendev/tracking_base_system/router-worker:latest}
     container_name: router-worker
     restart: unless-stopped
     env_file:

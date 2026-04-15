@@ -61,7 +61,7 @@ This repository workflow publishes images to:
 - `ghcr.io/<github-owner>/<repo>/tracking-api:{latest|staging-<sha>}`
 - `ghcr.io/<github-owner>/<repo>/router-worker:{latest|staging-<sha>}`
 
-Example if your repo is `lecongthien/Tracking_Base_System`:
+Example if your repo is `CongThienDev/Tracking_Base_System`:
 
-- `ghcr.io/lecongthien/tracking_base_system/tracking-api:latest`
-- `ghcr.io/lecongthien/tracking_base_system/router-worker:latest`
+- `ghcr.io/congthiendev/tracking_base_system/tracking-api:latest`
+- `ghcr.io/congthiendev/tracking_base_system/router-worker:latest`
