@@ -1,6 +1,36 @@
 import { describe, expect, it } from 'vitest';
 import { buildApp } from '../src/app.js';
+import type { AppConfig } from '../src/config.js';
 import { createEventDetail, createEventListItem, InMemoryEventReadRepository, RecordingDeliveryJobDispatcher } from './support/fakes.js';
+
+function buildTestConfig(overrides: Partial<AppConfig> = {}): AppConfig {
+  return {
+    nodeEnv: 'test',
+    port: 0,
+    databaseUrl: 'postgres://unused',
+    cors: {
+      allowOrigins: []
+    },
+    observability: {
+      metricsEnabled: true
+    },
+    security: {
+      authMode: 'off',
+      adminApiToken: undefined,
+      signatureSkewSeconds: 300,
+      rateLimit: {
+        enabled: false,
+        windowMs: 60_000,
+        maxRequests: 100
+      }
+    },
+    routerQueue: {
+      queueName: 'router-deliveries',
+      redis: {}
+    },
+    ...overrides
+  };
+}
 
 describe('GET /admin/events', () => {
   it('returns recent events with paging metadata', async () => {
@@ -24,7 +54,8 @@ describe('GET /admin/events', () => {
           ]
         }
       }),
-      deliveryJobDispatcher: new RecordingDeliveryJobDispatcher()
+      deliveryJobDispatcher: new RecordingDeliveryJobDispatcher(),
+      config: buildTestConfig()
     });
 
     const response = await app.inject({
@@ -57,7 +88,8 @@ describe('GET /admin/events', () => {
   it('clamps invalid paging query params', async () => {
     const app = buildApp({
       eventReadRepository: new InMemoryEventReadRepository(),
-      deliveryJobDispatcher: new RecordingDeliveryJobDispatcher()
+      deliveryJobDispatcher: new RecordingDeliveryJobDispatcher(),
+      config: buildTestConfig()
     });
 
     const response = await app.inject({
@@ -81,7 +113,8 @@ describe('GET /admin/events', () => {
     const repository = new InMemoryEventReadRepository();
     const app = buildApp({
       eventReadRepository: repository,
-      deliveryJobDispatcher: new RecordingDeliveryJobDispatcher()
+      deliveryJobDispatcher: new RecordingDeliveryJobDispatcher(),
+      config: buildTestConfig()
     });
 
     const response = await app.inject({
@@ -117,7 +150,8 @@ describe('GET /admin/events/:event_id', () => {
     });
     const app = buildApp({
       eventReadRepository: repository,
-      deliveryJobDispatcher: new RecordingDeliveryJobDispatcher()
+      deliveryJobDispatcher: new RecordingDeliveryJobDispatcher(),
+      config: buildTestConfig()
     });
 
     const response = await app.inject({
@@ -152,7 +186,8 @@ describe('GET /admin/events/:event_id', () => {
   it('returns not found for an unknown event', async () => {
     const app = buildApp({
       eventReadRepository: new InMemoryEventReadRepository({ eventById: null }),
-      deliveryJobDispatcher: new RecordingDeliveryJobDispatcher()
+      deliveryJobDispatcher: new RecordingDeliveryJobDispatcher(),
+      config: buildTestConfig()
     });
 
     const response = await app.inject({
@@ -182,7 +217,8 @@ describe('POST /admin/events/:event_id/replay', () => {
     const dispatcher = new RecordingDeliveryJobDispatcher();
     const app = buildApp({
       eventReadRepository: repository,
-      deliveryJobDispatcher: dispatcher
+      deliveryJobDispatcher: dispatcher,
+      config: buildTestConfig()
     });
 
     const response = await app.inject({
@@ -220,7 +256,8 @@ describe('POST /admin/events/:event_id/replay', () => {
     const dispatcher = new RecordingDeliveryJobDispatcher();
     const app = buildApp({
       eventReadRepository: repository,
-      deliveryJobDispatcher: dispatcher
+      deliveryJobDispatcher: dispatcher,
+      config: buildTestConfig()
     });
 
     const response = await app.inject({
@@ -249,7 +286,8 @@ describe('POST /admin/events/:event_id/replay', () => {
       eventReadRepository: new InMemoryEventReadRepository({
         eventById: createEventDetail()
       }),
-      deliveryJobDispatcher: new RecordingDeliveryJobDispatcher()
+      deliveryJobDispatcher: new RecordingDeliveryJobDispatcher(),
+      config: buildTestConfig()
     });
 
     const response = await app.inject({

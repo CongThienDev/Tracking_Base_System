@@ -19,6 +19,9 @@ describe('POST /track', () => {
       nodeEnv: 'test',
       port: 0,
       databaseUrl: 'postgres://unused',
+      cors: {
+        allowOrigins: []
+      },
       observability: {
         metricsEnabled: true
       },
@@ -255,6 +258,68 @@ describe('POST /track', () => {
       code: 'unauthorized'
     });
     expect(repository.count()).toBe(0);
+
+    await app.close();
+  });
+
+  it('handles CORS preflight for allowed origin on /track', async () => {
+    const app = buildApp({
+      eventRepository: repository,
+      deliveryJobDispatcher: new RecordingDeliveryJobDispatcher(),
+      logger: createLoggerSpy(),
+      config: buildTestConfig({
+        cors: {
+          allowOrigins: ['http://localhost:5173']
+        }
+      })
+    });
+
+    const response = await app.inject({
+      method: 'OPTIONS',
+      url: '/track',
+      headers: {
+        origin: 'http://localhost:5173'
+      }
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(response.headers['access-control-allow-origin']).toBe('http://localhost:5173');
+    expect(response.headers['access-control-allow-methods']).toBe('POST,OPTIONS');
+    expect(response.headers['access-control-allow-headers']).toContain('x-tracking-secret');
+
+    await app.close();
+  });
+
+  it('returns CORS headers on POST /track for allowed origin', async () => {
+    const app = buildApp({
+      eventRepository: repository,
+      deliveryJobDispatcher: new RecordingDeliveryJobDispatcher(),
+      logger: createLoggerSpy(),
+      config: buildTestConfig({
+        cors: {
+          allowOrigins: ['http://localhost:5173']
+        }
+      })
+    });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/track',
+      headers: {
+        'content-type': 'application/json',
+        origin: 'http://localhost:5173'
+      },
+      payload: {
+        event_id: 'evt-cors-001',
+        event_name: 'purchase',
+        session: {
+          session_id: 'sess-cors-001'
+        }
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['access-control-allow-origin']).toBe('http://localhost:5173');
 
     await app.close();
   });

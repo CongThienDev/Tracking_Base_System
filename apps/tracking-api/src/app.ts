@@ -45,6 +45,9 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
               nodeEnv: 'test',
               port: 0,
               databaseUrl: '',
+              cors: {
+                allowOrigins: []
+              },
               observability: {
                 metricsEnabled: true
               },
@@ -74,6 +77,51 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
   };
 
   const appConfig = resolveConfig();
+  const corsAllowOrigins = appConfig.cors.allowOrigins;
+
+  const resolveCorsOrigin = (originHeader: string | undefined): string | null => {
+    if (!originHeader || corsAllowOrigins.length === 0) {
+      return null;
+    }
+
+    if (corsAllowOrigins.includes('*')) {
+      return '*';
+    }
+
+    return corsAllowOrigins.includes(originHeader) ? originHeader : null;
+  };
+
+  const applyTrackCorsHeaders = (request: FastifyRequest, reply: FastifyReply): void => {
+    const originHeader = typeof request.headers.origin === 'string' ? request.headers.origin : undefined;
+    const corsOrigin = resolveCorsOrigin(originHeader);
+
+    if (!corsOrigin) {
+      return;
+    }
+
+    reply.header('access-control-allow-origin', corsOrigin);
+    if (corsOrigin !== '*') {
+      reply.header('vary', 'origin');
+    }
+    reply.header('access-control-allow-methods', 'POST,OPTIONS');
+    reply.header(
+      'access-control-allow-headers',
+      'content-type,x-tracking-secret,x-tracking-timestamp,x-tracking-signature'
+    );
+    reply.header('access-control-max-age', '86400');
+  };
+
+  app.options('/track', async (request, reply) => {
+    applyTrackCorsHeaders(request, reply);
+    return reply.code(204).send();
+  });
+
+  app.addHook('onSend', async (request, reply) => {
+    if ((request.raw.url ?? '').startsWith('/track')) {
+      applyTrackCorsHeaders(request, reply);
+    }
+  });
+
   const eventRepository = options.eventRepository ?? new PostgresEventRepository(getDbPool(appConfig.databaseUrl));
   const eventReadRepository =
     options.eventReadRepository ?? new PostgresEventReadRepository(getDbPool(appConfig.databaseUrl));
