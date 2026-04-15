@@ -21,8 +21,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -50,7 +50,7 @@ jobs:
     steps:
       - run: echo "Ready for build/push (merge or manual trigger)"
 
-    build-and-push:
+  build-and-push:
     name: Build and Push Docker
     runs-on: ubuntu-latest
     needs: [deploy-gate]
@@ -80,9 +80,6 @@ jobs:
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "image=${REGISTRY_IMAGE}:${VERSION}" >> $GITHUB_OUTPUT
           echo "registry_image=${REGISTRY_IMAGE}" >> $GITHUB_OUTPUT
-          echo "📦 Service: ${{ matrix.service }}"
-          echo "📦 Version: ${VERSION}"
-          echo "🐳 Image: ${REGISTRY_IMAGE}:${VERSION}"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -117,13 +114,3 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Summary
-        run: |
-          echo "### ✅ Build and Push Completed" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Service | ${{ matrix.service }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Version | ${{ steps.version.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Image | ${{ steps.version.outputs.image }} |" >> $GITHUB_STEP_SUMMARY
