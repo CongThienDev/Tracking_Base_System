@@ -1,0 +1,41 @@
+name: tracking-base-app
+
+services:
+  tracking-api:
+    image: ${TRACKING_API_IMAGE:-ghcr.io/your-org/your-repo/tracking-api:latest}
+    container_name: tracking-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: ${TRACKING_API_PORT:-3000}
+    ports:
+      - "${TRACKING_API_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - tracking-base-net
+
+  router-worker:
+    image: ${ROUTER_WORKER_IMAGE:-ghcr.io/your-org/your-repo/router-worker:latest}
+    container_name: router-worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+    depends_on:
+      tracking-api:
+        condition: service_started
+    networks:
+      - tracking-base-net
+
+networks:
+  tracking-base-net:
+    external: true
+    name: tracking-base-net
