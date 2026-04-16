@@ -4,6 +4,7 @@ This folder separates deploy concerns:
 
 - `deploy/app`: application containers (`tracking-console`, `tracking-api`, `router-worker`).
 - `deploy/infra`: shared infrastructure containers (`redis`).
+- `deploy/vps`: upload-first guide and host Nginx template for VPS rollout.
 
 ## Is this model correct for current repo flow?
 
@@ -18,6 +19,7 @@ Yes, this matches the current architecture:
 ## Prerequisites
 
 1. GHCR images exist for both services:
+   - `tracking-console`
    - `tracking-api`
    - `router-worker`
 2. Postgres is reachable (Railway/Supabase/self-hosted).
@@ -39,7 +41,8 @@ docker compose up -d
 cd deploy/app
 cp .env.example .env
 # edit .env values first
-docker compose up -d
+docker compose pull
+docker compose up -d --no-build
 ```
 
 ### 3) Smoke check
@@ -63,10 +66,12 @@ curl -fsS http://127.0.0.1:13001/ready
 
 This repository workflow publishes images to:
 
+- `ghcr.io/<github-owner>/<repo>/tracking-console:{latest|staging-<sha>}`
 - `ghcr.io/<github-owner>/<repo>/tracking-api:{latest|staging-<sha>}`
 - `ghcr.io/<github-owner>/<repo>/router-worker:{latest|staging-<sha>}`
 
 Example if your repo is `CongThienDev/Tracking_Base_System`:
 
+- `ghcr.io/congthiendev/tracking_base_system/tracking-console:latest`
 - `ghcr.io/congthiendev/tracking_base_system/tracking-api:latest`
 - `ghcr.io/congthiendev/tracking_base_system/router-worker:latest`
