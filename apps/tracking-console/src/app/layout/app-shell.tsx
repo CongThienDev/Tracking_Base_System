@@ -3,11 +3,9 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { getAdminApiToken, setAdminApiToken } from '../../shared/lib/admin-api-token';
 
 const links = [
-  { to: '/', label: 'Overview' },
+  { to: '/dashboard', label: 'Dashboard' },
   { to: '/events', label: 'Events' },
-  { to: '/debugger', label: 'Event Debugger' },
-  { to: '/flow', label: 'Flow Explorer' },
-  { to: '/phase-7', label: 'Phase 7 Cutover' }
+  { to: '/debugger', label: 'Debugger' }
 ];
 
 export function AppShell() {
@@ -19,65 +17,56 @@ export function AppShell() {
 
   return (
     <div className="app-shell">
-      <header className="topbar">
-        <div>
+      <aside className="app-sidebar">
+        <div className="brand-block">
           <p className="eyebrow">Tracking Base Console</p>
-          <h1>First-party Tracking Operations Frontend</h1>
+          <h1>Tracking Ops</h1>
+          <p className="sidebar-note">Realtime control surface.</p>
         </div>
-        <p className="topbar-note">Store-before-send. Dedup by event_id. Async fan-out delivery.</p>
-      </header>
 
-      <section className="card" style={{ display: 'grid', gap: '12px', marginTop: '14px' }}>
-        <div className="card-head" style={{ marginBottom: 0 }}>
-          <h2>Admin Access</h2>
-          <p>
-            Saved locally in this browser and attached only to <code>/admin/*</code> requests. Leave it empty when
-            the API is intentionally open in development.
-          </p>
-        </div>
-        <label style={{ display: 'grid', gap: '6px', fontWeight: 500, color: '#2f2622' }}>
-          Admin API token
-          <input
-            type="password"
-            value={adminToken}
-            onChange={(event) => setAdminToken(event.target.value)}
-            placeholder="ADMIN_API_TOKEN"
-            autoComplete="off"
-            spellCheck={false}
-            style={{
-              height: '38px',
-              borderRadius: '10px',
-              border: '1px solid #ccbca6',
-              padding: '0 10px',
-              font: 'inherit',
-              background: '#fff'
-            }}
-          />
-        </label>
-        <div className="toolbar" style={{ marginBottom: 0 }}>
-          <p className="muted-small">{adminToken.trim() ? 'Token saved in localStorage.' : 'No token saved.'}</p>
-          <div className="toolbar-actions">
+        <nav className="sidebar-nav" aria-label="Main navigation">
+          {links.map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              end={link.to === '/dashboard'}
+              className={({ isActive }) => (isActive ? 'nav-chip is-active' : 'nav-chip')}
+            >
+              {link.label}
+            </NavLink>
+          ))}
+        </nav>
+
+        <section className="token-panel">
+          <div className="token-panel-head">
+            <h2>Admin Access</h2>
+            <p>Browser-local token.</p>
+          </div>
+          <label className="token-field">
+            <span>Admin API token</span>
+            <input
+              type="password"
+              value={adminToken}
+              onChange={(event) => setAdminToken(event.target.value)}
+              placeholder="ADMIN_API_TOKEN"
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </label>
+          <div className="token-panel-foot">
+            <p className="muted-small">{adminToken.trim() ? 'Token stored locally.' : 'Token not set.'}</p>
             <button type="button" className="ghost-btn" onClick={() => setAdminToken('')}>
               Clear
             </button>
           </div>
+        </section>
+      </aside>
+
+      <main className="app-main">
+        <div className="app-main-head">
+          <p className="eyebrow">System Workspace</p>
+          <p className="topbar-note">Health, events, debugger, flow.</p>
         </div>
-      </section>
-
-      <nav className="nav-grid" aria-label="Main navigation">
-        {links.map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            end={link.to === '/'}
-            className={({ isActive }) => (isActive ? 'nav-chip is-active' : 'nav-chip')}
-          >
-            {link.label}
-          </NavLink>
-        ))}
-      </nav>
-
-      <main>
         <Outlet />
       </main>
     </div>
