@@ -2,10 +2,7 @@ name: tracking-base-app
 
 services:
   tracking-console:
-    image: ${TRACKING_CONSOLE_IMAGE:-tracking-console:local}
-    build:
-      context: ../..
-      dockerfile: apps/tracking-console/Dockerfile
+    image: ${TRACKING_CONSOLE_IMAGE:-ghcr.io/congthiendev/tracking_base_system/tracking-console:latest}
     container_name: tracking-console
     restart: unless-stopped
     depends_on:
