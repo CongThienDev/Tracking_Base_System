@@ -61,6 +61,8 @@ curl -fsS http://127.0.0.1:13001/ready
 - If you already run host-level Nginx/Caddy for TLS, proxy `https://your-domain` to `http://127.0.0.1:${TRACKING_CONSOLE_PORT}`.
 - `tracking-api` may still need a public endpoint for ingestion (`POST /track`) depending on your architecture.
 - If GHCR images are private, `docker login ghcr.io` is required on the VPS.
+- Internal API port is always `3000` inside container. External host port is `${TRACKING_API_PORT:-13001}`.
+- For single-domain production on Nginx Proxy Manager, see `deploy/vps/README.md` and `deploy/vps/npm-one-domain-walk-cwish-me.md`.
 
 ## GHCR image naming from CI
 
