@@ -32,6 +32,13 @@ Edit `.env.app` with production values:
 - `ADMIN_API_TOKEN=...`
 - `TRACKING_API_SECRET=...`
 
+Recommended production values:
+
+- `NODE_ENV=production`
+- `TRACKING_API_AUTH_MODE=shared-secret`
+- `REDIS_URL=redis://tracking-redis:6379/0` (container-to-container, do not use `localhost`)
+- `TRACKING_CORS_ALLOW_ORIGINS=https://staging.prankbook.com,https://prankbook.com,https://walk.cwish.me`
+
 ## Run containers
 
 ```bash
@@ -49,6 +56,39 @@ docker compose -f app.compose.yml --env-file .env.app ps
 curl -I http://127.0.0.1:18081
 curl -fsS http://127.0.0.1:13001/health
 curl -fsS http://127.0.0.1:13001/ready
+```
+
+## Port map (current standard)
+
+- `tracking-console` container: `80` -> host `${TRACKING_CONSOLE_PORT}` (default `18081`)
+- `tracking-api` container: `3000` -> host `${TRACKING_API_PORT}` (default `13001`)
+- `redis` container: `6379` -> host `${REDIS_PORT}` (default `6379`)
+
+## Single-domain setup (Nginx Proxy Manager)
+
+When using one public domain (example: `walk.cwish.me`) for both console and API:
+
+1. Proxy Host Details:
+   - Domain: `walk.cwish.me`
+   - Forward Hostname/IP: `77.42.71.202`
+   - Forward Port: `18081`
+2. SSL tab:
+   - Enable certificate for `walk.cwish.me`
+   - Force SSL enabled
+3. Custom Nginx config (gear icon):
+   - copy from `deploy/vps/npm-one-domain-walk-cwish-me.md`
+
+Why this is needed:
+
+- `/api/*` admin routes need `ADMIN_API_TOKEN` header. Nginx normally rejects underscore headers unless configured.
+- `/track` needs preflight `OPTIONS` and must route to API (`13001`) instead of console (`18081`).
+
+Quick validation:
+
+```bash
+curl -i https://walk.cwish.me/health
+curl -i https://walk.cwish.me/ready
+curl -i "https://walk.cwish.me/api/admin/events?limit=1&offset=0" -H "ADMIN_API_TOKEN: <ADMIN_API_TOKEN>"
 ```
 
 ## Host Nginx

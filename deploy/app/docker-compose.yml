@@ -27,7 +27,7 @@ services:
       - .env
     environment:
       NODE_ENV: production
-      PORT: ${TRACKING_API_PORT:-13001}
+      PORT: 3000
     ports:
       - "${TRACKING_API_PORT:-13001}:3000"
     healthcheck:

@@ -28,3 +28,5 @@
 
 - [Configuration](configuration.md)
 - [Runbooks](runbooks.md)
+- [Deploy folder guide](../../deploy/README.md)
+- [VPS upload-only guide](../../deploy/vps/README.md)

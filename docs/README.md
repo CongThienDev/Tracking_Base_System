@@ -44,6 +44,7 @@ The layout is designed so humans and coding agents can navigate the repository w
 - [`06-frontend/`](06-frontend/tracking-sdk.md): browser and backend client integration
 - [`06-frontend/frontend-layout-architecture.md`](06-frontend/frontend-layout-architecture.md): canonical frontend layering rules
 - [`07-ops/`](07-ops/deployment.md): deployment and operations
+- [`../deploy/vps/README.md`](../deploy/vps/README.md): VPS deployment checklist (compose + proxy)
 - [`07-ops/queue-worker-go-live-checklist.md`](07-ops/queue-worker-go-live-checklist.md): step-by-step queue/worker go-live checklist
 - [`08-security/`](08-security/privacy-and-gdpr.md): privacy and security controls
 - [`09-testing/`](09-testing/test-strategy.md): quality gates
