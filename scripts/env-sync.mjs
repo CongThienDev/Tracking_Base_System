@@ -62,8 +62,10 @@ const targets = [
     name: 'deploy-app',
     outputPath: path.join(repoRoot, 'deploy', 'app', '.env'),
     keys: [
+      'TRACKING_CONSOLE_IMAGE',
       'TRACKING_API_IMAGE',
       'ROUTER_WORKER_IMAGE',
+      'TRACKING_CONSOLE_PORT',
       'TRACKING_API_PORT',
       'DATABASE_URL',
       'ADMIN_API_TOKEN',

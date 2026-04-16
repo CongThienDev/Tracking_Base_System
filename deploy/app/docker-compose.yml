@@ -1,6 +1,27 @@
 name: tracking-base-app
 
 services:
+  tracking-console:
+    image: ${TRACKING_CONSOLE_IMAGE:-tracking-console:local}
+    build:
+      context: ../..
+      dockerfile: apps/tracking-console/Dockerfile
+    container_name: tracking-console
+    restart: unless-stopped
+    depends_on:
+      tracking-api:
+        condition: service_healthy
+    ports:
+      - "${TRACKING_CONSOLE_PORT:-18081}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - tracking-base-net
+
   tracking-api:
     image: ${TRACKING_API_IMAGE:-ghcr.io/congthiendev/tracking_base_system/tracking-api:latest}
     container_name: tracking-api
@@ -9,9 +30,9 @@ services:
       - .env
     environment:
       NODE_ENV: production
-      PORT: ${TRACKING_API_PORT:-3000}
+      PORT: ${TRACKING_API_PORT:-13001}
     ports:
-      - "${TRACKING_API_PORT:-3000}:3000"
+      - "${TRACKING_API_PORT:-13001}:3000"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
       interval: 30s
