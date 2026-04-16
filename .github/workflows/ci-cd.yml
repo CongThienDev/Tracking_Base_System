@@ -41,6 +41,9 @@ jobs:
       - name: Build router-worker
         run: npm run -w @tracking-base/router-worker build
 
+      - name: Build tracking-console
+        run: npm run -w @tracking-base/tracking-console build
+
   deploy-gate:
     name: Deploy Gate
     runs-on: ubuntu-latest
@@ -65,6 +68,8 @@ jobs:
             dockerfile: Dockerfile
           - service: router-worker
             dockerfile: apps/router-worker/Dockerfile
+          - service: tracking-console
+            dockerfile: apps/tracking-console/Dockerfile
 
     steps:
       - name: Checkout repository

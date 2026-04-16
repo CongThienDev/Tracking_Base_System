@@ -2,7 +2,7 @@
 
 This folder separates deploy concerns:
 
-- `deploy/app`: application containers (`tracking-api`, `router-worker`) pulled from GHCR.
+- `deploy/app`: application containers (`tracking-console`, `tracking-api`, `router-worker`).
 - `deploy/infra`: shared infrastructure containers (`redis`).
 
 ## Is this model correct for current repo flow?
@@ -12,7 +12,8 @@ Yes, this matches the current architecture:
 1. `tracking-api` receives `POST /track`.
 2. API enqueues delivery jobs to Redis/BullMQ.
 3. `router-worker` consumes jobs and pushes to destinations.
-4. Postgres remains the canonical source of truth.
+4. `tracking-console` serves dashboard UI and proxies `/api/*` to `tracking-api`.
+5. Postgres remains the canonical source of truth.
 
 ## Prerequisites
 
@@ -44,14 +45,18 @@ docker compose up -d
 ### 3) Smoke check
 
 ```bash
-curl -fsS http://127.0.0.1:3000/health
-curl -fsS http://127.0.0.1:3000/ready
+curl -I http://127.0.0.1:18081
+curl -fsS http://127.0.0.1:13001/health
+curl -fsS http://127.0.0.1:13001/ready
 ```
 
 ## Notes
 
 - Keep `router-worker` private (do not expose ports).
-- Expose public domain only for `tracking-api` through reverse proxy (Nginx/Caddy) with TLS.
+- `tracking-console` listens on `${TRACKING_CONSOLE_PORT:-18081}` and is the recommended public entrypoint for dashboard.
+- `tracking-console` container includes Nginx and forwards `/api/*` internally to `tracking-api`.
+- If you already run host-level Nginx/Caddy for TLS, proxy `https://your-domain` to `http://127.0.0.1:${TRACKING_CONSOLE_PORT}`.
+- `tracking-api` may still need a public endpoint for ingestion (`POST /track`) depending on your architecture.
 - If GHCR images are private, `docker login ghcr.io` is required on the VPS.
 
 ## GHCR image naming from CI
